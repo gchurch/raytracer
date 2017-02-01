@@ -39,7 +39,6 @@ float yaw = 0;
 float posDelta = 0.1;
 float rotDelta = 0.1;
 
-
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
 bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection);
@@ -79,9 +78,11 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles
 		//b vector
 		vec3 b = start - v0;
 
-		//Cramer's rule to calculate t
+		//A matrix
 		mat3 A(-dir, e1, e2);
 		float detA = glm::determinant(A);
+
+		//Cramer's rule to calculate t
 		mat3 At(b, e1, e2);
 		float t = glm::determinant(At) / detA;
 	
@@ -120,12 +121,9 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles
 }
 
 void updateRotationMatrix() {
-	//Calcuate new columns for the rotation matrix of the camera
-	vec3 c1(cos(yaw), 0, -sin(yaw));
-	vec3 c3(sin(yaw), 0, cos(yaw));
-	//update rotation matrix columns
-	cameraRot[0] = c1;
-	cameraRot[2] = c3;
+	//Calcuate new columns for the camera's rotation matrix
+	cameraRot[0] = vec3(cos(yaw), 0, -sin(yaw));
+	cameraRot[2] = vec3(sin(yaw), 0, cos(yaw));
 }
 
 void Update()
@@ -140,19 +138,16 @@ void Update()
 	Uint8* keystate = SDL_GetKeyState(0);
 	if(keystate[SDLK_UP])
 	{
-		//calculate the z-axis vector and move in the positive direction
+		//calculate the z-axis vector and move camera in the positive direction
 		vec3 forward(cameraRot[2][0], cameraRot[2][1], cameraRot[2][2]);
-		cameraPos.x += posDelta * forward.x;
-		cameraPos.y += posDelta * forward.y;
-		cameraPos.z += posDelta * forward.z;
+		cameraPos += posDelta * forward;
 	}
 	if(keystate[SDLK_DOWN])
 	{	
-		//calculate the z-axis vector and move in the negative direction
+		//calculate the z-axis vector and move camera in the negative direction
 		vec3 forward(cameraRot[2][0], cameraRot[2][1], cameraRot[2][2]);
-		cameraPos.x -= posDelta * forward.x;
-		cameraPos.y -= posDelta * forward.y;
-		cameraPos.z -= posDelta * forward.z;
+		cameraPos -= posDelta * forward;
+		
 	}
 	if(keystate[SDLK_LEFT])
 	{
