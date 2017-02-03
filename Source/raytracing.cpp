@@ -262,9 +262,13 @@ void Draw() {
 			//If the ray intersects a triangle then fill the pixel
 			//with the color of the closest intersecting triangle
 			if(ClosestIntersection(cameraPos, d, triangles, closest) == true) {
-				//vec3 color = triangles[closest.triangleIndex].color;
+				vec3 color = triangles[closest.triangleIndex].color;
 				vec3 light = DirectLight(closest);
-				PutPixelSDL(screen, x, y, light);
+
+				//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector
+				//where the * operator denotes element-wise multiplication between vectors.
+				vec3 R = color * light;
+				PutPixelSDL(screen, x, y, R);
 			}
 
 		}
