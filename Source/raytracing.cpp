@@ -39,11 +39,16 @@ float yaw = 0;
 float posDelta = 0.1;
 float rotDelta = 0.1;
 
+//Light information
+vec3 lightPos(0, -0.5, -0.7);
+vec3 lightColor = 14.f * vec3(1,1,1);
+
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
 bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection);
 void Update();
 void Draw();
+vec3 DirectLight(const Intersection& i);
 
 
 int main() {
@@ -126,6 +131,32 @@ void updateRotationMatrix() {
 	cameraRot[2] = vec3(sin(yaw), 0, cos(yaw));
 }
 
+float distanceBetweenPoints(vec3 a, vec3 b) {
+	return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2));
+}
+
+float dotProduct(vec3 a, vec3 b) {
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+vec3 unitVectorToLightSource(vec3 a) {
+	vec3 v(lightPos.x - a.x, lightPos.y - a.y, lightPos.z - a.z);
+	return normalize(v);
+}
+
+vec3 DirectLight(const Intersection& i) {
+	const float pi = 3.1415926535897;
+	float radius = distanceBetweenPoints(i.position, lightPos);
+	vec3 B = lightColor / (4 * pi * pow(radius,3));
+
+	vec3 n = triangles[i.triangleIndex].normal;
+	vec3 r = unitVectorToLightSource(i.position);
+
+	vec3 D = B * max(dotProduct(r,n),0.0f);
+	return D;
+}
+
+
 void Update()
 {
 	// Compute frame time:
@@ -193,8 +224,9 @@ void Draw() {
 			//If the ray intersects a triangle then fill the pixel
 			//with the color of the closest intersecting triangle
 			if(ClosestIntersection(cameraPos, d, triangles, closest) == true) {
-				vec3 color = triangles[closest.triangleIndex].color;
-				PutPixelSDL(screen, x, y, color);
+				//vec3 color = triangles[closest.triangleIndex].color;
+				vec3 light = DirectLight(closest);
+				PutPixelSDL(screen, x, y, light);
 			}
 
 		}
