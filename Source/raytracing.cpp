@@ -35,13 +35,14 @@ vec3 cameraPos(0,0,-4);
 mat3 cameraRot(vec3(1,0,0),vec3(0,1,0),vec3(0,0,1));
 float yaw = 0;
 
-//Update information
-float posDelta = 0.1;
-float rotDelta = 0.1;
-
 //Light information
 vec3 lightPos(0, -0.5, -0.7);
 vec3 lightColor = 14.f * vec3(1,1,1);
+
+//Update information
+float posDelta = 0.1;
+float rotDelta = 0.1;
+float lightDelta = 0.1;
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
@@ -131,27 +132,39 @@ void updateRotationMatrix() {
 	cameraRot[2] = vec3(sin(yaw), 0, cos(yaw));
 }
 
+//Calculate the Euclidean distance between the two given vectors
 float distanceBetweenPoints(vec3 a, vec3 b) {
 	return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2));
 }
 
+//Caluclate the dot product between the two given vectors
 float dotProduct(vec3 a, vec3 b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+//Calculate the normalised direction vector from the given vector to the lightsource
 vec3 unitVectorToLightSource(vec3 a) {
 	vec3 v(lightPos.x - a.x, lightPos.y - a.y, lightPos.z - a.z);
 	return normalize(v);
 }
 
+//Output the illumination of the point in the intersection
 vec3 DirectLight(const Intersection& i) {
+	//Pi constant
 	const float pi = 3.1415926535897;
+
+	//distance from intersection point to light source
 	float radius = distanceBetweenPoints(i.position, lightPos);
+
+	//The power per area at this point
 	vec3 B = lightColor / (4 * pi * pow(radius,3));
 
+	//unit vector describing normal of surface
 	vec3 n = triangles[i.triangleIndex].normal;
+	//unit vector describing direction from surface point to light source
 	vec3 r = unitVectorToLightSource(i.position);
 
+	//fraction of the power per area depending on surface's angle from light source
 	vec3 D = B * max(dotProduct(r,n),0.0f);
 	return D;
 }
@@ -192,7 +205,32 @@ void Update()
 		yaw += rotDelta;
 		updateRotationMatrix();
 	}
-	
+
+	//Move light position depending on key press
+	if(keystate[SDLK_w])
+	{
+		lightPos.z += lightDelta;
+	}
+	if(keystate[SDLK_s])
+	{
+		lightPos.z -= lightDelta;
+	}
+	if(keystate[SDLK_a])
+	{
+		lightPos.x -= lightDelta;
+	}
+	if(keystate[SDLK_d])
+	{
+		lightPos.x += lightDelta;
+	}
+	if(keystate[SDLK_q])
+	{
+		lightPos.y -= lightDelta;
+	}
+	if(keystate[SDLK_e])
+	{
+		lightPos.y += lightDelta;
+	}
 }
 
 void Draw() {
