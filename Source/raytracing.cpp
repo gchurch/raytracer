@@ -171,6 +171,15 @@ vec3 DirectLight(const Intersection& i) {
 	//fraction of the power per area depending on surface's angle from light source
 	vec3 D = B * max(dotProduct(r,n),0.0f);
 
+	//trace ray from intersection point to lightsource, if closest intersection distance is less than distance to light
+	//source then give give this point no direct illumination. This creates shadow effect
+	Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
+	if(ClosestIntersection(i.position, r, triangles, closest)) {
+		if(closest.distance < radius) {
+			D = vec3(0,0,0);
+		}
+	}
+
 	return D;
 }
 
