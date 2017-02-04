@@ -44,6 +44,9 @@ float posDelta = 0.1;
 float rotDelta = 0.1;
 float lightDelta = 0.1;
 
+//Float point inaccuracy constant
+float epsilon = 0.00001;
+
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
 bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection);
@@ -96,21 +99,21 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles
 		float t = glm::determinant(At) / detA;
 	
 		//if the distance is greater than 0, i.e. the triangle is infront of the camera then continue
-		if(t > 0) {
+		if(t > epsilon) {
 
 			//Use Cramer's rule to calculate u
 			mat3 Au(-dir, b, e2);
 			float u = glm::determinant(Au) / detA;
 
 			//Only continue if u meets the inequality conditions
-			if( u > 0 && u < 1) {
+			if( u > epsilon && u < 1 + epsilon) {
 
 				//Use Cramer's rule to calculate v
 				mat3 Av(-dir, e1, b);
 				float v = glm::determinant(Av) / detA;
 
 				//If ray intersects triangle
-				if(v > 0 && u + v < 1) {
+				if(v > epsilon && u + v < 1 + epsilon) {
 					//if this triangle is closer than the current closest intersection
 					if(t < closestIntersection.distance) {
 						//set intersection flag to true
