@@ -70,6 +70,9 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles
 	//bool stating whether or not this ray intersects a triangle
 	bool intersection = false;
 
+	//make sure that the direction vector is normalized
+	dir = normalize(dir);
+
 	//iterates through all triangles
 	for(unsigned int i = 0; i < triangles.size(); i++) {
 		//triangles vertices
@@ -93,7 +96,7 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles
 		float t = glm::determinant(At) / detA;
 	
 		//if the distance is greater than 0, i.e. the triangle is infront of the camera then continue
-		if(t >= 0) {
+		if(t > 0) {
 
 			//Use Cramer's rule to calculate u
 			mat3 Au(-dir, b, e2);
@@ -161,11 +164,13 @@ vec3 DirectLight(const Intersection& i) {
 
 	//unit vector describing normal of surface
 	vec3 n = triangles[i.triangleIndex].normal;
+
 	//unit vector describing direction from surface point to light source
 	vec3 r = unitVectorToLightSource(i.position);
 
 	//fraction of the power per area depending on surface's angle from light source
 	vec3 D = B * max(dotProduct(r,n),0.0f);
+
 	return D;
 }
 
@@ -250,8 +255,7 @@ void Draw() {
 			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
 
 			//the normalised ray vector (assuming no rotation of the camera)
-			vec3 d(newX, newY, focalLength);
-			d = d/sqrt((pow(newX,2) + pow(newY,2) + pow(focalLength,2)));
+			vec3 d = normalize(vec3(newX, newY, focalLength));
 
 			//The new ray vector is the rotation matrix multiplied by the old ray vector
 			d = cameraRot * d;
