@@ -38,13 +38,14 @@ float yaw = 0;
 //Light information
 vec3 lightPos(0, -0.5, -0.7);
 vec3 lightColor = 14.f * vec3(1,1,1);
+vec3 indirectLight = 0.5f * vec3(1,1,1);
 
 //Update information
 float posDelta = 0.1;
 float rotDelta = 0.1;
 float lightDelta = 0.1;
 
-//Float point inaccuracy constant
+//Floating point inaccuracy constant
 float epsilon = 0.00001;
 
 /* ----------------------------------------------------------------------------*/
@@ -278,12 +279,14 @@ void Draw() {
 			//If the ray intersects a triangle then fill the pixel
 			//with the color of the closest intersecting triangle
 			if(ClosestIntersection(cameraPos, d, triangles, closest) == true) {
+				//row
 				vec3 color = triangles[closest.triangleIndex].color;
+				//D
 				vec3 light = DirectLight(closest);
 
-				//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector
-				//where the * operator denotes element-wise multiplication between vectors.
-				vec3 R = color * light;
+				//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
+				//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
+				vec3 R = color * (light + indirectLight);
 				PutPixelSDL(screen, x, y, R);
 			}
 
