@@ -5,6 +5,8 @@
 #include "TestModel.h"
 #include "limits.h"
 
+#include "BRDFRead.h"
+
 using namespace std;
 using glm::vec3;
 using glm::mat3;
