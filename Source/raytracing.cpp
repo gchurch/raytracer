@@ -254,14 +254,24 @@ void Update()
 	}
 }
 
-void Draw() {
-	SDL_FillRect(screen, 0, 0);
+void getArrayOfDirectionVectors(float x, float y, vec3 dir[5]) {
+	dir[0] = normalize(vec3(x, y, focalLength));
+	dir[0] = cameraRot * dir[0];
 
-	if(SDL_MUSTLOCK(screen)) {
-		SDL_LockSurface(screen);
-	}
+	dir[1] = normalize(vec3(x + 0.5, y, focalLength));
+	dir[1] = cameraRot * dir[1];
 
+	dir[2] = normalize(vec3(x, y + 0.5, focalLength));
+	dir[2] = cameraRot * dir[2];
 
+	dir[3] = normalize(vec3(x - 0.5, y, focalLength));
+	dir[3] = cameraRot * dir[3];
+
+	dir[4] = normalize(vec3(x, y - 0.5, focalLength));
+	dir[4] = cameraRot * dir[4];
+}
+
+void raytracing() {
 	//Iterate through all pixels in window
 	for(int y = 0; y < SCREEN_HEIGHT; y++) {
 		for(int x = 0; x < SCREEN_WIDTH; x++) {
@@ -295,6 +305,56 @@ void Draw() {
 
 		}
 	}
+}
+
+void antialiasing_raytracing() {
+	//Iterate through all pixels in window
+	for(int y = 0; y < SCREEN_HEIGHT; y++) {
+		for(int x = 0; x < SCREEN_WIDTH; x++) {
+		
+			//Calculate relative x and y positions of the pixel to the camera position
+			float newX = (float) x - (float) SCREEN_WIDTH / 2;
+			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
+			
+			//array of direction vectors used for antialiasing
+			vec3 d[5];
+			getArrayOfDirectionVectors(newX, newY, d);
+
+			vec3 R(0,0,0);
+			
+			//If the ray intersects a triangle then fill the pixel
+			//with the color of the closest intersecting triangle
+			for(int i = 0; i < 5; i++) {
+
+				//holds information about the closest intersection for this ray
+				Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
+
+				if(ClosestIntersection(cameraPos, d[i], triangles, closest) == true) {
+					//row
+					vec3 color = triangles[closest.triangleIndex].color;
+					//D
+					vec3 light = DirectLight(closest);
+		
+					//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
+					//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
+					R += color * (light + indirectLight) * 0.2f;
+					PutPixelSDL(screen, x, y, R);
+				}
+			}
+
+		}
+	}
+}
+
+void Draw() {
+	SDL_FillRect(screen, 0, 0);
+
+	if(SDL_MUSTLOCK(screen)) {
+		SDL_LockSurface(screen);
+	}
+
+	//raytracing();
+	antialiasing_raytracing();
 
 	if(SDL_MUSTLOCK(screen)) {
 		SDL_UnlockSurface(screen);
