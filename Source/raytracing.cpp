@@ -47,6 +47,8 @@ float posDelta = 0.1;
 float rotDelta = 0.1;
 float lightDelta = 0.1;
 
+float antialiasingDelta = 0.2;
+
 //Floating point inaccuracy constant
 float epsilon = 0.00001;
 
@@ -254,60 +256,42 @@ void Update()
 	}
 }
 
-void getArrayOfDirectionVectors(float x, float y, vec3 dir[5]) {
-	dir[0] = normalize(vec3(x, y, focalLength));
-	dir[0] = cameraRot * dir[0];
-
-	dir[1] = normalize(vec3(x + 0.5, y, focalLength));
-	dir[1] = cameraRot * dir[1];
-
-	dir[2] = normalize(vec3(x, y + 0.5, focalLength));
-	dir[2] = cameraRot * dir[2];
-
-	dir[3] = normalize(vec3(x - 0.5, y, focalLength));
-	dir[3] = cameraRot * dir[3];
-
-	dir[4] = normalize(vec3(x, y - 0.5, focalLength));
-	dir[4] = cameraRot * dir[4];
-}
-
-void raytracing() {
-	//Iterate through all pixels in window
-	for(int y = 0; y < SCREEN_HEIGHT; y++) {
-		for(int x = 0; x < SCREEN_WIDTH; x++) {
-		
-			//Calculate relative x and y positions of the pixel to the camera position
-			float newX = (float) x - (float) SCREEN_WIDTH / 2;
-			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
-
-			//the normalised ray vector (assuming no rotation of the camera)
-			vec3 d = normalize(vec3(newX, newY, focalLength));
-
-			//The new ray vector is the rotation matrix multiplied by the old ray vector
-			d = cameraRot * d;
-			
-			//holds information about the closest intersection for this ray
-			Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
+void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]) {
+	if(n == 1) {
+		dir[0] = normalize(vec3(x, y, focalLength));
+		dir[0] = cameraRot * dir[0];
+	}
 	
-			//If the ray intersects a triangle then fill the pixel
-			//with the color of the closest intersecting triangle
-			if(ClosestIntersection(cameraPos, d, triangles, closest) == true) {
-				//row
-				vec3 color = triangles[closest.triangleIndex].color;
-				//D
-				vec3 light = DirectLight(closest);
+	if(n >= 5) {
+		dir[1] = normalize(vec3(x + antialiasingDelta, y + antialiasingDelta, focalLength));
+		dir[1] = cameraRot * dir[1];
 
-				//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
-				//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
-				vec3 R = color * (light + indirectLight);
-				PutPixelSDL(screen, x, y, R);
-			}
+		dir[2] = normalize(vec3(x - antialiasingDelta, y + antialiasingDelta, focalLength));
+		dir[2] = cameraRot * dir[2];
 
-		}
+		dir[3] = normalize(vec3(x - antialiasingDelta, y - antialiasingDelta, focalLength));
+		dir[3] = cameraRot * dir[3];
+
+		dir[4] = normalize(vec3(x + antialiasingDelta, y - antialiasingDelta, focalLength));
+		dir[4] = cameraRot * dir[4];
+	}
+
+	if(n >= 9) {
+		dir[5] = normalize(vec3(x + antialiasingDelta, y, focalLength));
+		dir[5] = cameraRot * dir[5];
+	
+		dir[6] = normalize(vec3(x, y + antialiasingDelta, focalLength));
+		dir[6] = cameraRot * dir[6];
+
+		dir[7] = normalize(vec3(x - antialiasingDelta, y, focalLength));
+		dir[7] = cameraRot * dir[7];
+
+		dir[8] = normalize(vec3(x, y - antialiasingDelta, focalLength));
+		dir[8] = cameraRot * dir[8];
 	}
 }
 
-void antialiasing_raytracing() {
+void antialiasing_raytracing(int n) {
 	//Iterate through all pixels in window
 	for(int y = 0; y < SCREEN_HEIGHT; y++) {
 		for(int x = 0; x < SCREEN_WIDTH; x++) {
@@ -317,14 +301,14 @@ void antialiasing_raytracing() {
 			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
 			
 			//array of direction vectors used for antialiasing
-			vec3 d[5];
-			getArrayOfDirectionVectors(newX, newY, d);
+			vec3 d[n];
+			getArrayOfDirectionVectors(newX, newY, n, d);
 
 			vec3 R(0,0,0);
 			
 			//If the ray intersects a triangle then fill the pixel
 			//with the color of the closest intersecting triangle
-			for(int i = 0; i < 5; i++) {
+			for(int i = 0; i < n; i++) {
 
 				//holds information about the closest intersection for this ray
 				Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
@@ -337,7 +321,7 @@ void antialiasing_raytracing() {
 		
 					//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
 					//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
-					R += color * (light + indirectLight) * 0.2f;
+					R += color * (light + indirectLight) * (1/(float)n);
 					PutPixelSDL(screen, x, y, R);
 				}
 			}
@@ -354,7 +338,7 @@ void Draw() {
 	}
 
 	//raytracing();
-	antialiasing_raytracing();
+	antialiasing_raytracing(9);
 
 	if(SDL_MUSTLOCK(screen)) {
 		SDL_UnlockSurface(screen);
