@@ -109,14 +109,14 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles
 			float u = glm::determinant(Au) / detA;
 
 			//Only continue if u meets the inequality conditions
-			if( u > epsilon && u <= 1 + epsilon) {
+			if( u > -epsilon && u <= 1 + epsilon) {
 
 				//Use Cramer's rule to calculate v
 				mat3 Av(-dir, e1, b);
 				float v = glm::determinant(Av) / detA;
 
 				//If ray intersects triangle
-				if(v > epsilon && u + v <= 1 + epsilon) {
+				if(v > -epsilon && u + v <= 1 + epsilon) {
 					//if this triangle is closer than the current closest intersection
 					if(t < closestIntersection.distance) {
 						//set intersection flag to true
