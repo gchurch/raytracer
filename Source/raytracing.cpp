@@ -109,14 +109,14 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles
 			float u = glm::determinant(Au) / detA;
 
 			//Only continue if u meets the inequality conditions
-			if( u > epsilon && u < 1 + epsilon) {
+			if( u > epsilon && u <= 1 + epsilon) {
 
 				//Use Cramer's rule to calculate v
 				mat3 Av(-dir, e1, b);
 				float v = glm::determinant(Av) / detA;
 
 				//If ray intersects triangle
-				if(v > epsilon && u + v < 1 + epsilon) {
+				if(v > epsilon && u + v <= 1 + epsilon) {
 					//if this triangle is closer than the current closest intersection
 					if(t < closestIntersection.distance) {
 						//set intersection flag to true
@@ -181,7 +181,8 @@ vec3 DirectLight(const Intersection& i) {
 	//source then give give this point no direct illumination. This creates shadow effect
 	Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
 	if(ClosestIntersection(i.position, r, triangles, closest)) {
-		if(closest.distance < radius) {
+		//If the closest intersection is closer than the light source then set the illumination to 0
+		if(closest.distance < radius + epsilon) {
 			D = vec3(0,0,0);
 		}
 	}
