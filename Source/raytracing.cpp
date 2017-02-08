@@ -47,7 +47,7 @@ float posDelta = 0.1;
 float rotDelta = 0.1;
 float lightDelta = 0.1;
 
-float antialiasingDelta = 0.2;
+int antiAliasingCells = 1;
 
 //Floating point inaccuracy constant
 float epsilon = 0.00001;
@@ -257,17 +257,20 @@ void Update()
 }
 
 //Stochastic sampling for antialiasing (could implement distance based weights)
-void getArrayOfDirectionVectors(float x, float y, vec3 dir[9]) {
-	float cellLength = 0.333;
+void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]) {
+
+	int rowLength = sqrt(n);
+
+	float cellLength = 1/(float) rowLength;
 	int k = 0;
 
 	float newX = (float) rand()/ (float) RAND_MAX;
 	float newY = (float) rand()/ (float) RAND_MAX;
 
-	for(int i = 0; i < 3; i++) {
-		for(int j = 0; j < 3; j++) {
-			float newX = (x - ((i-1.5) * cellLength)) + ((float) rand()/ (float) RAND_MAX) * 0.33;
-			float newY = (y - ((j-1.5) * cellLength)) + ((float) rand()/ (float) RAND_MAX) * 0.33;;
+	for(int i = 0; i < rowLength; i++) {
+		for(int j = 0; j < rowLength; j++) {
+			float newX = (x - ((i-1.5) * cellLength)) + ((float) rand()/ (float) RAND_MAX) * cellLength;
+			float newY = (y - ((j-1.5) * cellLength)) + ((float) rand()/ (float) RAND_MAX) * cellLength;
 
 
 			dir[k] = normalize(vec3(newX, newY, focalLength));
@@ -287,16 +290,16 @@ void raytracing() {
 			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
 			
 			//array of direction vectors used for antialiasing
-			vec3 d[9];
-			getArrayOfDirectionVectors(newX, newY, d);
+			vec3 d[antiAliasingCells];
+			getArrayOfDirectionVectors(newX, newY, antiAliasingCells, d);
 
 			vec3 R(0,0,0);
 
-			float factor = 1.0f/9.0f;
+			float factor = 1.0f/(float) antiAliasingCells;
 			
 			//If the ray intersects a triangle then fill the pixel
 			//with the color of the closest intersecting triangle
-			for(int i = 0; i < 9; i++) {
+			for(int i = 0; i < antiAliasingCells; i++) {
 
 				//holds information about the closest intersection for this ray
 				Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
