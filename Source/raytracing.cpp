@@ -256,42 +256,28 @@ void Update()
 	}
 }
 
-void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]) {
-	if(n == 1) {
-		dir[0] = normalize(vec3(x, y, focalLength));
-		dir[0] = cameraRot * dir[0];
-	}
-	
-	if(n >= 5) {
-		dir[1] = normalize(vec3(x + antialiasingDelta, y + antialiasingDelta, focalLength));
-		dir[1] = cameraRot * dir[1];
+//Stochastic sampling for antialiasing (could implement distance based weights)
+void getArrayOfDirectionVectors(float x, float y, vec3 dir[9]) {
+	float cellLength = 0.333;
+	int k = 0;
 
-		dir[2] = normalize(vec3(x - antialiasingDelta, y + antialiasingDelta, focalLength));
-		dir[2] = cameraRot * dir[2];
+	float newX = (float) rand()/ (float) RAND_MAX;
+	float newY = (float) rand()/ (float) RAND_MAX;
 
-		dir[3] = normalize(vec3(x - antialiasingDelta, y - antialiasingDelta, focalLength));
-		dir[3] = cameraRot * dir[3];
+	for(int i = 0; i < 3; i++) {
+		for(int j = 0; j < 3; j++) {
+			float newX = (x - ((i-1.5) * cellLength)) + ((float) rand()/ (float) RAND_MAX) * 0.33;
+			float newY = (y - ((j-1.5) * cellLength)) + ((float) rand()/ (float) RAND_MAX) * 0.33;;
 
-		dir[4] = normalize(vec3(x + antialiasingDelta, y - antialiasingDelta, focalLength));
-		dir[4] = cameraRot * dir[4];
-	}
 
-	if(n >= 9) {
-		dir[5] = normalize(vec3(x + antialiasingDelta, y, focalLength));
-		dir[5] = cameraRot * dir[5];
-	
-		dir[6] = normalize(vec3(x, y + antialiasingDelta, focalLength));
-		dir[6] = cameraRot * dir[6];
-
-		dir[7] = normalize(vec3(x - antialiasingDelta, y, focalLength));
-		dir[7] = cameraRot * dir[7];
-
-		dir[8] = normalize(vec3(x, y - antialiasingDelta, focalLength));
-		dir[8] = cameraRot * dir[8];
+			dir[k] = normalize(vec3(newX, newY, focalLength));
+			dir[k] = cameraRot * dir[k];
+			k++;
+		}
 	}
 }
 
-void antialiasing_raytracing(int n) {
+void raytracing() {
 	//Iterate through all pixels in window
 	for(int y = 0; y < SCREEN_HEIGHT; y++) {
 		for(int x = 0; x < SCREEN_WIDTH; x++) {
@@ -301,14 +287,16 @@ void antialiasing_raytracing(int n) {
 			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
 			
 			//array of direction vectors used for antialiasing
-			vec3 d[n];
-			getArrayOfDirectionVectors(newX, newY, n, d);
+			vec3 d[9];
+			getArrayOfDirectionVectors(newX, newY, d);
 
 			vec3 R(0,0,0);
+
+			float factor = 1.0f/9.0f;
 			
 			//If the ray intersects a triangle then fill the pixel
 			//with the color of the closest intersecting triangle
-			for(int i = 0; i < n; i++) {
+			for(int i = 0; i < 9; i++) {
 
 				//holds information about the closest intersection for this ray
 				Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
@@ -321,10 +309,10 @@ void antialiasing_raytracing(int n) {
 		
 					//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
 					//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
-					R += color * (light + indirectLight) * (1/(float)n);
-					PutPixelSDL(screen, x, y, R);
+					R += color * (light + indirectLight) * factor;
 				}
 			}
+			PutPixelSDL(screen, x, y, R);
 
 		}
 	}
@@ -337,8 +325,7 @@ void Draw() {
 		SDL_LockSurface(screen);
 	}
 
-	//raytracing();
-	antialiasing_raytracing(9);
+	raytracing();
 
 	if(SDL_MUSTLOCK(screen)) {
 		SDL_UnlockSurface(screen);
