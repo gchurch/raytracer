@@ -81,7 +81,76 @@ int main() {
 }
 
 bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
-	return true;
+	
+	bool intersects = false;
+
+	//Bounding box
+	vec3 Pmin = object.Pmin;
+	vec3 Pmax = object.Pmax;	
+
+
+	/*Checking z-planes*/
+	
+	//distance the ray travels to intersect plane
+	float tmin = (Pmin.z - start.z) / dir.z;
+	float tmax = (Pmax.z - start.z) / dir.z;
+
+	//point of intersection
+	vec3 imin = start + tmin * dir;
+	vec3 imax = start + tmax * dir;
+
+	//check that the point is infront of us and lies within the bounding box
+	if(tmin > 0 && imin.x > Pmin.x && imin.x < Pmax.x && imin.y > Pmin.y && imin.y < Pmax.y) {
+		return true;
+	}
+
+	//check that the point is infront of us and lies within the bounding box
+	if(tmax > 0 && imax.x > Pmin.x && imax.x < Pmax.x && imax.y > Pmin.y && imax.y < Pmax.y) {
+		return true;
+	}
+
+	/*Checking x-planes*/
+	
+	//distance the ray travels to intersect plane
+	tmin = (Pmin.x - start.x) / dir.x;
+	tmax = (Pmax.x - start.x) / dir.x;
+
+	//point of intersection
+	imin = start + tmin * dir;
+	imax = start + tmax * dir;
+
+	//check that the point is infront of us and lies within the bounding box
+	if(tmin > 0 && imin.z > Pmin.z && imin.z < Pmax.z && imin.y > Pmin.y && imin.y < Pmax.y) {
+		return true;
+	}
+
+	//check that the point is infront of us and lies within the bounding box
+	if(tmax > 0 && imax.z > Pmin.x && imax.z < Pmax.x && imax.y > Pmin.y && imax.y < Pmax.y) {
+		return true;
+	}
+
+	/*Checking y-planes*/
+	
+	//distance the ray travels to intersect plane
+	tmin = (Pmin.y - start.y) / dir.y;
+	tmax = (Pmax.y - start.y) / dir.y;
+
+	//point of intersection
+	imin = start + tmin * dir;
+	imax = start + tmax * dir;
+
+	//check that the point is infront of us and lies within the bounding box
+	if(tmin > 0 && imin.z > Pmin.z && imin.z < Pmax.z && imin.x > Pmin.x && imin.x < Pmax.x) {
+		return true;
+	}
+
+	//check that the point is infront of us and lies within the bounding box
+	if(tmax > 0 && imax.z > Pmin.x && imax.z < Pmax.x && imax.x > Pmin.x && imax.x < Pmax.x) {
+		return true;
+	}
+
+
+	return false;
 }
 
 bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, Intersection& closestIntersection) {
