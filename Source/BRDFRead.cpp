@@ -23,6 +23,8 @@
 #include "math.h"
 #include <stdio.h>
 
+#include <tau.h>
+
 #define BRDF_SAMPLING_RES_THETA_H       90
 #define BRDF_SAMPLING_RES_THETA_D       90
 #define BRDF_SAMPLING_RES_PHI_D         360

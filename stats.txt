@@ -1,0 +1,48 @@
+Render time:                                   862.000000 ms.
+Total number of triangles:                     30
+Total number of primary rays:                  1870401
+Total number of ray-triangles tests:           56112030
+Total number of ray-triangles intersections:   1266104
+
+Render time:                                   731.000000 ms.
+Total number of triangles:                     30
+Total number of primary rays:                  1870401
+Total number of ray-triangles tests:           56112030
+Total number of ray-triangles intersections:   1266104
+
+Render time:                                   727.000000 ms.
+Total number of triangles:                     30
+Total number of primary rays:                  1870401
+Total number of ray-triangles tests:           56112030
+Total number of ray-triangles intersections:   1266104
+
+Render time:                                   729.000000 ms.
+Total number of triangles:                     30
+Total number of primary rays:                  1870401
+Total number of ray-triangles tests:           56112030
+Total number of ray-triangles intersections:   1266104
+
+Render time:                                   726.000000 ms.
+Total number of triangles:                     30
+Total number of primary rays:                  1870401
+Total number of ray-triangles tests:           56112030
+Total number of ray-triangles intersections:   1266104
+
+Render time:                                   758.000000 ms.
+Total number of triangles:                     30
+Total number of primary rays:                  1870401
+Total number of ray-triangles tests:           56112030
+Total number of ray-triangles intersections:   1266104
+
+Render time:                                   846.000000 ms.
+Total number of triangles:                     30
+Total number of primary rays:                  1870401
+Total number of ray-triangles tests:           56112030
+Total number of ray-triangles intersections:   1266104
+
+Render time:                                   758.000000 ms.
+Total number of triangles:                     30
+Total number of primary rays:                  1870401
+Total number of ray-triangles tests:           56112030
+Total number of ray-triangles intersections:   1266104
+
