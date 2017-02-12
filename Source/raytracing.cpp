@@ -53,6 +53,7 @@ int antiAliasingCells = 4;
 float epsilon = 0.00001;
 
 //Statistics
+int numRayBoxTests = 0;
 int numRayTrianglesTests = 0;
 int numRayTrianglesIntersections = 0;
 int numPrimaryRays = 0;
@@ -80,8 +81,69 @@ int main() {
 	return 0;
 }
 
+bool OIntersection(vec3 start, vec3 dir, const Object& object) {
+	//Bounding box
+	vec3 Pmin = object.Pmin;
+	vec3 Pmax = object.Pmax;
+	
+	float txmin = (Pmin.x - start.x) / dir.x;
+	float txmax = (Pmax.x - start.x) / dir.x;
+
+	if(txmin > txmax) {
+		float tmp = txmin;
+		txmin = txmax;
+		txmax = tmp;
+	}
+
+	float tymin = (Pmin.y - start.y) / dir.y;
+	float tymax = (Pmax.y - start.y) / dir.y;
+
+	if(tymin > tymax) {
+		float tmp = tymin;
+		tymin = tymax;
+		tymax = tmp;
+	}
+
+	if((txmin > tymax) || (tymin > txmax)) {
+		return false;
+	}
+
+	if(tymin > txmin) {
+		txmin = tymin;
+	}
+
+	if(tymax < txmax) {
+		txmax = tymax;
+	}
+
+	float tzmin = (Pmin.z - start.z) / dir.z;
+	float tzmax = (Pmax.z - start.z) / dir.z;
+
+	if(tzmin > tzmax) {
+		float tmp = tzmin;
+		tzmin = tzmax;
+		tzmax = tmp;
+	}
+
+	if((txmin > tzmax) || (tzmin > txmax)) {
+		return false;
+	}
+
+	if(tzmin > txmin) {
+		txmin = tzmin;
+	}
+
+	if(tzmax < txmax) {
+		txmax = tzmax;
+	}
+	
+	return true;
+}
+
 bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
 	
+	numRayBoxTests++;
+
 	//Bounding box
 	vec3 Pmin = object.Pmin;
 	vec3 Pmax = object.Pmax;	
@@ -165,7 +227,7 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, In
 	for(unsigned int j = 0; j < objects.size(); j++) {
 	
 	
-		if(ObjectIntersection(start, dir, objects[j])) {
+		if(OIntersection(start, dir, objects[j])) {
 
 			//iterates through all triangles
 			for(unsigned int i = 0; i < objects[j].triangles.size(); i++) {
@@ -298,11 +360,13 @@ void Update()
 	printf("Render time:                                   %f ms.\n", dt);
 	printf("Total number of triangles:                     %d\n", objects[0].triangles.size() + objects[1].triangles.size() + objects[2].triangles.size());
 	printf("Total number of primary rays:                  %d\n", numPrimaryRays);
+	printf("Total number of bounding box tests:            %d\n", numRayBoxTests);
 	printf("Total number of ray-triangles tests:           %d\n", numRayTrianglesTests);
 	printf("Total number of ray-triangles intersections:   %d\n", numRayTrianglesIntersections);
 	printf("\n");
 
 	numPrimaryRays = 0;
+	numRayBoxTests = 0;
 	numRayTrianglesTests = 0;
 	numRayTrianglesIntersections = 0;
 
