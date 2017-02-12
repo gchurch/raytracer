@@ -334,6 +334,11 @@ vec3 DirectLight(const Intersection& i) {
 	//unit vector describing direction from surface point to light source
 	vec3 r = unitVectorToLightSource(i.position);
 
+	//Make sure that the normal points the correct way (i.e. <90 degrees away from the light source)
+	if(dotProduct(n,r) < 0) {
+		n = -n;
+	}
+
 	//fraction of the power per area depending on surface's angle from light source
 	vec3 D = B * max(dotProduct(r,n),0.0f);
 
