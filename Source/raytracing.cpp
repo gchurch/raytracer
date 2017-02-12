@@ -82,8 +82,6 @@ int main() {
 
 bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
 	
-	bool intersects = false;
-
 	//Bounding box
 	vec3 Pmin = object.Pmin;
 	vec3 Pmax = object.Pmax;	
@@ -100,12 +98,12 @@ bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
 	vec3 imax = start + tmax * dir;
 
 	//check that the point is infront of us and lies within the bounding box
-	if(tmin > 0 && imin.x > Pmin.x && imin.x < Pmax.x && imin.y > Pmin.y && imin.y < Pmax.y) {
+	if(tmin > epsilon && imin.x > (Pmin.x - epsilon) && imin.x < (Pmax.x + epsilon) && imin.y > (Pmin.y - epsilon) && imin.y < (Pmax.y + epsilon)) {
 		return true;
 	}
 
 	//check that the point is infront of us and lies within the bounding box
-	if(tmax > 0 && imax.x > Pmin.x && imax.x < Pmax.x && imax.y > Pmin.y && imax.y < Pmax.y) {
+	if(tmax > epsilon && imax.x > (Pmin.x - epsilon) && imax.x < (Pmax.x + epsilon) && imax.y > (Pmin.y - epsilon) && imax.y < (Pmax.y + epsilon)) {
 		return true;
 	}
 
@@ -120,12 +118,12 @@ bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
 	imax = start + tmax * dir;
 
 	//check that the point is infront of us and lies within the bounding box
-	if(tmin > 0 && imin.z > Pmin.z && imin.z < Pmax.z && imin.y > Pmin.y && imin.y < Pmax.y) {
+	if(tmin > epsilon && imin.z > (Pmin.z - epsilon) && imin.z < (Pmax.z + epsilon) && imin.y > (Pmin.y - epsilon) && imin.y < (Pmax.y + epsilon)) {
 		return true;
 	}
 
 	//check that the point is infront of us and lies within the bounding box
-	if(tmax > 0 && imax.z > Pmin.x && imax.z < Pmax.x && imax.y > Pmin.y && imax.y < Pmax.y) {
+	if(tmax > epsilon && imax.z > (Pmin.x - epsilon) && imax.z < (Pmax.x + epsilon) && imax.y > (Pmin.y - epsilon) && imax.y < (Pmax.y + epsilon)) {
 		return true;
 	}
 
@@ -140,12 +138,12 @@ bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
 	imax = start + tmax * dir;
 
 	//check that the point is infront of us and lies within the bounding box
-	if(tmin > 0 && imin.z > Pmin.z && imin.z < Pmax.z && imin.x > Pmin.x && imin.x < Pmax.x) {
+	if(tmin > epsilon && imin.z > (Pmin.z - epsilon) && imin.z < (Pmax.z + epsilon) && imin.x > (Pmin.x - epsilon) && imin.x < (Pmax.x + epsilon)) {
 		return true;
 	}
 
 	//check that the point is infront of us and lies within the bounding box
-	if(tmax > 0 && imax.z > Pmin.x && imax.z < Pmax.x && imax.x > Pmin.x && imax.x < Pmax.x) {
+	if(tmax > epsilon && imax.z > (Pmin.x - epsilon) && imax.z < (Pmax.x + epsilon) && imax.x > (Pmin.x - epsilon) && imax.x < (Pmax.x + epsilon)) {
 		return true;
 	}
 
