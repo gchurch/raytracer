@@ -69,12 +69,13 @@ void Update();
 bool ObjectIntersection(vec3 start, vec3 dir, const Object& object);
 bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, Intersection& closestIntersection);
 bool PointInShadow(vec3 start, vec3 dir, const vector<Object>& objects, float radius);
-vec3 DirectLight(const Intersection& i);
 void updateRotationMatrix();
 vec3 DirectLight(const Intersection& i);
+vector<vec3> CalculateLightPoints();
 void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]);
 void raycasting();
 
+const vector<vec3> lightPoints = CalculateLightPoints();
 
 int main() {
 	LoadTestModel(objects);
@@ -408,6 +409,17 @@ void updateRotationMatrix() {
 	cameraRot[2] = vec3(sin(yaw), 0, cos(yaw));
 }
 
+vector<vec3> CalculateLightPoints() {
+	vector<vec3> points;
+	points.push_back(lightCentre + vec3(lightRadius,0,0));
+	points.push_back(lightCentre + vec3(-lightRadius,0,0));
+	points.push_back(lightCentre + vec3(0,lightRadius,0));
+	points.push_back(lightCentre + vec3(0,-lightRadius,0));
+	points.push_back(lightCentre + vec3(0,0,lightRadius));
+	points.push_back(lightCentre + vec3(0,0,-lightRadius));
+	return points;
+}
+
 //Output the illumination of the point in the intersection
 vec3 DirectLight(const Intersection& i) {
 
@@ -418,16 +430,11 @@ vec3 DirectLight(const Intersection& i) {
 	vec3 v(lightCentre.x - i.position.x, lightCentre.y - i.position.y, lightCentre.z - i.position.z);
 	vec3 r = normalize(v);
 
-
-	vec3 D;
+	vec3 D(0,0,0);
 
 	//trace ray from intersection point to lightsource, if intersection distance is less than distance to light
 	//source then give give this point no direct illumination. This creates shadow effect
-	if(PointInShadow(i.position, r, objects, radius)) {
-		D = vec3(0,0,0);
-	}
-	else {
-
+	if(!PointInShadow(i.position, r, objects, radius)) {
 		//The power per area at this point
 		vec3 B = lightColor / (4 * PI * pow(radius,3));
 
