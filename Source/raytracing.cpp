@@ -9,6 +9,9 @@ using namespace std;
 using glm::vec3;
 using glm::mat3;
 
+bool softShadows = true;
+
+
 
 //structure used to hold information about the intersection of a ray and a triangle
 struct Intersection
@@ -41,9 +44,9 @@ float yaw = 0;
 
 //Light information
 vec3 lightCentre(0, -0.5, -0.7);
-float lightRadius = 0.1;
+float lightRadius = 0.05;
 vec3 lightColor = 10.f * vec3(1,1,1);
-vec3 indirectLight = 0.25f * vec3(1,1,1);
+vec3 indirectLight = 0.1f * vec3(1,1,1);
 
 //Update information
 float posDelta = 0.1;
@@ -423,27 +426,55 @@ vector<vec3> CalculateLightPoints() {
 //Output the illumination of the point in the intersection
 vec3 DirectLight(const Intersection& i) {
 
-	//distance from intersection point to light source
-	float radius = length(i.position - lightCentre);
-
-	//r is the unit vector describing direction from surface point to light source
-	vec3 v(lightCentre.x - i.position.x, lightCentre.y - i.position.y, lightCentre.z - i.position.z);
-	vec3 r = normalize(v);
-
 	vec3 D(0,0,0);
 
-	//trace ray from intersection point to lightsource, if intersection distance is less than distance to light
-	//source then give give this point no direct illumination. This creates shadow effect
-	if(!PointInShadow(i.position, r, objects, radius)) {
-		//The power per area at this point
-		vec3 B = lightColor / (4 * PI * pow(radius,3));
+	if(softShadows) {
+		float fraction = 1.0f / (float) lightPoints.size();
 
-		//unit vector describing normal of surface
-		vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
+		for(unsigned int j = 0; j < lightPoints.size(); j++) {
 
-		//fraction of the power per area depending on surface's angle from light source
-		D = B * max(dot(r,n),0.0f);
+			//distance from intersection point to light source
+			float radius = length(i.position - lightPoints[j]);
+
+			//r is the unit vector describing direction from surface point to light source
+			vec3 v(lightPoints[j].x - i.position.x, lightPoints[j].y - i.position.y, lightPoints[j].z - i.position.z);
+			vec3 r = normalize(v);
+
+			//trace ray from intersection point to lightsource, if intersection distance is less than distance to light
+			//source then give give this point no direct illumination. This creates shadow effect
+			if(!PointInShadow(i.position, r, objects, radius)) {
+				//The power per area at this point
+				vec3 B = lightColor / (4 * PI * pow(radius,3));
+
+				//unit vector describing normal of surface
+				vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
+
+				//fraction of the power per area depending on surface's angle from light source
+				D += fraction * B * max(dot(r,n),0.0f);
+			}
+		}
 	}
+	else {
+		//distance from intersection point to light source
+		float radius = length(i.position - lightCentre);
+
+		//r is the unit vector describing direction from surface point to light source
+		vec3 v(lightCentre.x - i.position.x, lightCentre.y - i.position.y, lightCentre.z - i.position.z);
+		vec3 r = normalize(v);
+
+		//trace ray from intersection point to lightsource, if intersection distance is less than distance to light
+		//source then give give this point no direct illumination. This creates shadow effect
+		if(!PointInShadow(i.position, r, objects, radius)) {
+			//The power per area at this point
+			vec3 B = lightColor / (4 * PI * pow(radius,3));
+				
+			//unit vector describing normal of surface
+			vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;				
+
+			//fraction of the power per area depending on surface's angle from light source
+			D = B * max(dot(r,n),0.0f);
+		}
+	}	
 	return D;
 }
 
