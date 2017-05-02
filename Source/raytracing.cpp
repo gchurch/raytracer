@@ -71,8 +71,6 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, In
 bool PointInShadow(vec3 start, vec3 dir, const vector<Object>& objects, float radius);
 vec3 DirectLight(const Intersection& i);
 void updateRotationMatrix();
-float distanceBetweenPoints(vec3 a, vec3 b);
-vec3 unitVectorToLightSource(vec3 a);
 vec3 DirectLight(const Intersection& i);
 void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]);
 void raycasting();
@@ -410,25 +408,16 @@ void updateRotationMatrix() {
 	cameraRot[2] = vec3(sin(yaw), 0, cos(yaw));
 }
 
-//Calculate the Euclidean distance between the two given vectors
-float distanceBetweenPoints(vec3 a, vec3 b) {
-	return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2));
-}
-
-//Calculate the normalised direction vector from the given vector to the lightsource
-vec3 unitVectorToLightSource(vec3 a) {
-	vec3 v(lightCentre.x - a.x, lightCentre.y - a.y, lightCentre.z - a.z);
-	return normalize(v);
-}
-
 //Output the illumination of the point in the intersection
 vec3 DirectLight(const Intersection& i) {
 
 	//distance from intersection point to light source
-	float radius = distanceBetweenPoints(i.position, lightCentre);
+	float radius = length(i.position - lightCentre);
 
-	//unit vector describing direction from surface point to light source
-	vec3 r = unitVectorToLightSource(i.position);
+	//r is the unit vector describing direction from surface point to light source
+	vec3 v(lightCentre.x - i.position.x, lightCentre.y - i.position.y, lightCentre.z - i.position.z);
+	vec3 r = normalize(v);
+
 
 	vec3 D;
 
