@@ -59,11 +59,19 @@ int numRayTrianglesIntersections = 0;
 int numPrimaryRays = 0;
 
 /* ----------------------------------------------------------------------------*/
-/* FUNCTIONS                                                                   */
-bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, Intersection& closestIntersection);
-void Update();
+/* FUNCTIONS                                                                  */
 void Draw();
+void Update();
+bool ObjectIntersection(vec3 start, vec3 dir, const Object& object);
+bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, Intersection& closestIntersection);
 vec3 DirectLight(const Intersection& i);
+void updateRotationMatrix();
+float distanceBetweenPoints(vec3 a, vec3 b);
+float dotProduct(vec3 a, vec3 b);
+vec3 unitVectorToLightSource(vec3 a);
+vec3 DirectLight(const Intersection& i);
+void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]);
+void raycasting();
 
 
 int main() {
@@ -81,7 +89,103 @@ int main() {
 	return 0;
 }
 
-bool OIntersection(vec3 start, vec3 dir, const Object& object) {
+void Draw() {
+	SDL_FillRect(screen, 0, 0);
+
+	if(SDL_MUSTLOCK(screen)) {
+		SDL_LockSurface(screen);
+	}
+
+	raycasting();
+
+	if(SDL_MUSTLOCK(screen)) {
+		SDL_UnlockSurface(screen);
+	}
+
+	SDL_UpdateRect(screen, 0, 0, 0, 0);
+
+}
+
+void Update()
+{
+	// Compute frame time:
+	int t2 = SDL_GetTicks();
+	float dt = float(t2-t);
+	t = t2;
+	printf("Render time:                                   %f ms.\n", dt);
+	printf("Total number of triangles:                     %d\n", (int) (objects[0].triangles.size() + objects[1].triangles.size() + objects[2].triangles.size()));
+	printf("Total number of primary rays:                  %d\n", numPrimaryRays);
+	printf("Total number of bounding box tests:            %d\n", numRayBoxTests);
+	printf("Total number of ray-triangles tests:           %d\n", numRayTrianglesTests);
+	printf("Total number of ray-triangles intersections:   %d\n", numRayTrianglesIntersections);
+	printf("\n");
+
+	numPrimaryRays = 0;
+	numRayBoxTests = 0;
+	numRayTrianglesTests = 0;
+	numRayTrianglesIntersections = 0;
+
+
+	//get key presses and update camera position
+	Uint8* keystate = SDL_GetKeyState(0);
+	if(keystate[SDLK_UP])
+	{
+		//calculate the z-axis vector and move camera in the positive direction
+		vec3 forward(cameraRot[2][0], cameraRot[2][1], cameraRot[2][2]);
+		cameraPos += posDelta * forward;
+	}
+	if(keystate[SDLK_DOWN])
+	{	
+		//calculate the z-axis vector and move camera in the negative direction
+		vec3 forward(cameraRot[2][0], cameraRot[2][1], cameraRot[2][2]);
+		cameraPos -= posDelta * forward;
+		
+	}
+	if(keystate[SDLK_LEFT])
+	{
+		//decrease the rotation angle and update rotation matrix 
+		yaw -= rotDelta;
+		updateRotationMatrix();
+	}
+	if(keystate[SDLK_RIGHT])
+	{
+		//increase the rotation angle and update the rotation matrix
+		yaw += rotDelta;
+		updateRotationMatrix();
+	}
+
+	//Move light position depending on key press
+	if(keystate[SDLK_w])
+	{
+		lightPos.z += lightDelta;
+	}
+	if(keystate[SDLK_s])
+	{
+		lightPos.z -= lightDelta;
+	}
+	if(keystate[SDLK_a])
+	{
+		lightPos.x -= lightDelta;
+	}
+	if(keystate[SDLK_d])
+	{
+		lightPos.x += lightDelta;
+	}
+	if(keystate[SDLK_q])
+	{
+		lightPos.y -= lightDelta;
+	}
+	if(keystate[SDLK_e])
+	{
+		lightPos.y += lightDelta;
+	}
+}
+
+
+bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
+
+	numRayBoxTests++;
+
 	//Bounding box
 	vec3 Pmin = object.Pmin;
 	vec3 Pmax = object.Pmax;
@@ -140,79 +244,6 @@ bool OIntersection(vec3 start, vec3 dir, const Object& object) {
 	return true;
 }
 
-bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
-	
-	numRayBoxTests++;
-
-	//Bounding box
-	vec3 Pmin = object.Pmin;
-	vec3 Pmax = object.Pmax;	
-
-
-	/*Checking z-planes*/
-	
-	//distance the ray travels to intersect plane
-	float tmin = (Pmin.z - start.z) / dir.z;
-	float tmax = (Pmax.z - start.z) / dir.z;
-
-	//point of intersection
-	vec3 imin = start + tmin * dir;
-	vec3 imax = start + tmax * dir;
-
-	//check that the point is infront of us and lies within the bounding box
-	if(tmin > epsilon && imin.x > (Pmin.x - epsilon) && imin.x < (Pmax.x + epsilon) && imin.y > (Pmin.y - epsilon) && imin.y < (Pmax.y + epsilon)) {
-		return true;
-	}
-
-	//check that the point is infront of us and lies within the bounding box
-	if(tmax > epsilon && imax.x > (Pmin.x - epsilon) && imax.x < (Pmax.x + epsilon) && imax.y > (Pmin.y - epsilon) && imax.y < (Pmax.y + epsilon)) {
-		return true;
-	}
-
-	/*Checking x-planes*/
-	
-	//distance the ray travels to intersect plane
-	tmin = (Pmin.x - start.x) / dir.x;
-	tmax = (Pmax.x - start.x) / dir.x;
-
-	//point of intersection
-	imin = start + tmin * dir;
-	imax = start + tmax * dir;
-
-	//check that the point is infront of us and lies within the bounding box
-	if(tmin > epsilon && imin.z > (Pmin.z - epsilon) && imin.z < (Pmax.z + epsilon) && imin.y > (Pmin.y - epsilon) && imin.y < (Pmax.y + epsilon)) {
-		return true;
-	}
-
-	//check that the point is infront of us and lies within the bounding box
-	if(tmax > epsilon && imax.z > (Pmin.x - epsilon) && imax.z < (Pmax.x + epsilon) && imax.y > (Pmin.y - epsilon) && imax.y < (Pmax.y + epsilon)) {
-		return true;
-	}
-
-	/*Checking y-planes*/
-	
-	//distance the ray travels to intersect plane
-	tmin = (Pmin.y - start.y) / dir.y;
-	tmax = (Pmax.y - start.y) / dir.y;
-
-	//point of intersection
-	imin = start + tmin * dir;
-	imax = start + tmax * dir;
-
-	//check that the point is infront of us and lies within the bounding box
-	if(tmin > epsilon && imin.z > (Pmin.z - epsilon) && imin.z < (Pmax.z + epsilon) && imin.x > (Pmin.x - epsilon) && imin.x < (Pmax.x + epsilon)) {
-		return true;
-	}
-
-	//check that the point is infront of us and lies within the bounding box
-	if(tmax > epsilon && imax.z > (Pmin.x - epsilon) && imax.z < (Pmax.x + epsilon) && imax.x > (Pmin.x - epsilon) && imax.x < (Pmax.x + epsilon)) {
-		return true;
-	}
-
-
-	return false;
-}
-
 bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, Intersection& closestIntersection) {
 
 	//Increment the variable holding the total number of primary rays
@@ -227,7 +258,7 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, In
 	for(unsigned int j = 0; j < objects.size(); j++) {
 	
 	
-		if(OIntersection(start, dir, objects[j])) {
+		if(ObjectIntersection(start, dir, objects[j])) {
 
 			//iterates through all triangles
 			for(unsigned int i = 0; i < objects[j].triangles.size(); i++) {
@@ -355,82 +386,6 @@ vec3 DirectLight(const Intersection& i) {
 	return D;
 }
 
-
-void Update()
-{
-	// Compute frame time:
-	int t2 = SDL_GetTicks();
-	float dt = float(t2-t);
-	t = t2;
-	printf("Render time:                                   %f ms.\n", dt);
-	printf("Total number of triangles:                     %d\n", objects[0].triangles.size() + objects[1].triangles.size() + objects[2].triangles.size());
-	printf("Total number of primary rays:                  %d\n", numPrimaryRays);
-	printf("Total number of bounding box tests:            %d\n", numRayBoxTests);
-	printf("Total number of ray-triangles tests:           %d\n", numRayTrianglesTests);
-	printf("Total number of ray-triangles intersections:   %d\n", numRayTrianglesIntersections);
-	printf("\n");
-
-	numPrimaryRays = 0;
-	numRayBoxTests = 0;
-	numRayTrianglesTests = 0;
-	numRayTrianglesIntersections = 0;
-
-
-	//get key presses and update camera position
-	Uint8* keystate = SDL_GetKeyState(0);
-	if(keystate[SDLK_UP])
-	{
-		//calculate the z-axis vector and move camera in the positive direction
-		vec3 forward(cameraRot[2][0], cameraRot[2][1], cameraRot[2][2]);
-		cameraPos += posDelta * forward;
-	}
-	if(keystate[SDLK_DOWN])
-	{	
-		//calculate the z-axis vector and move camera in the negative direction
-		vec3 forward(cameraRot[2][0], cameraRot[2][1], cameraRot[2][2]);
-		cameraPos -= posDelta * forward;
-		
-	}
-	if(keystate[SDLK_LEFT])
-	{
-		//decrease the rotation angle and update rotation matrix 
-		yaw -= rotDelta;
-		updateRotationMatrix();
-	}
-	if(keystate[SDLK_RIGHT])
-	{
-		//increase the rotation angle and update the rotation matrix
-		yaw += rotDelta;
-		updateRotationMatrix();
-	}
-
-	//Move light position depending on key press
-	if(keystate[SDLK_w])
-	{
-		lightPos.z += lightDelta;
-	}
-	if(keystate[SDLK_s])
-	{
-		lightPos.z -= lightDelta;
-	}
-	if(keystate[SDLK_a])
-	{
-		lightPos.x -= lightDelta;
-	}
-	if(keystate[SDLK_d])
-	{
-		lightPos.x += lightDelta;
-	}
-	if(keystate[SDLK_q])
-	{
-		lightPos.y -= lightDelta;
-	}
-	if(keystate[SDLK_e])
-	{
-		lightPos.y += lightDelta;
-	}
-}
-
 //Stochastic sampling for antialiasing (could implement distance based weights)
 void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]) {
 
@@ -441,8 +396,6 @@ void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]) {
 
 	for(int i = 0; i < rowLength; i++) {
 		for(int j = 0; j < rowLength; j++) {
-			//float newX = (x - ((i-1.5) * cellLength)) + ((float) rand()/ (float) RAND_MAX) * cellLength;
-			//float newY = (y - ((j-1.5) * cellLength)) + ((float) rand()/ (float) RAND_MAX) * cellLength;
 
 			//For now not using any randomness
 			float newX = (x - ((i-1) * cellLength));
@@ -455,7 +408,7 @@ void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]) {
 	}
 }
 
-void raytracing() {
+void raycasting() {
 	//Iterate through all pixels in window
 	for(int y = 0; y < SCREEN_HEIGHT; y++) {
 		for(int x = 0; x < SCREEN_WIDTH; x++) {
@@ -494,21 +447,4 @@ void raytracing() {
 
 		}
 	}
-}
-
-void Draw() {
-	SDL_FillRect(screen, 0, 0);
-
-	if(SDL_MUSTLOCK(screen)) {
-		SDL_LockSurface(screen);
-	}
-
-	raytracing();
-
-	if(SDL_MUSTLOCK(screen)) {
-		SDL_UnlockSurface(screen);
-	}
-
-	SDL_UpdateRect(screen, 0, 0, 0, 0);
-
 }
