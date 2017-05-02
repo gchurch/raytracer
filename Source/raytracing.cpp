@@ -9,6 +9,7 @@ using namespace std;
 using glm::vec3;
 using glm::mat3;
 
+
 //structure used to hold information about the intersection of a ray and a triangle
 struct Intersection
 {
@@ -20,6 +21,8 @@ struct Intersection
 
 /* ----------------------------------------------------------------------------*/
 /* GLOBAL VARIABLES                                                            */
+
+float PI = 3.1415926535897;
 
 //Screen information
 const int SCREEN_WIDTH = 500;
@@ -37,9 +40,10 @@ mat3 cameraRot(vec3(1,0,0),vec3(0,1,0),vec3(0,0,1));
 float yaw = 0;
 
 //Light information
-vec3 lightPos(0, -0.5, -0.7);
-vec3 lightColor = 14.f * vec3(1,1,1);
-vec3 indirectLight = 0.5f * vec3(1,1,1);
+vec3 lightCentre(0, -0.5, -0.7);
+float lightRadius = 0.1;
+vec3 lightColor = 10.f * vec3(1,1,1);
+vec3 indirectLight = 0.25f * vec3(1,1,1);
 
 //Update information
 float posDelta = 0.1;
@@ -68,7 +72,6 @@ bool PointInShadow(vec3 start, vec3 dir, const vector<Object>& objects, float ra
 vec3 DirectLight(const Intersection& i);
 void updateRotationMatrix();
 float distanceBetweenPoints(vec3 a, vec3 b);
-float dotProduct(vec3 a, vec3 b);
 vec3 unitVectorToLightSource(vec3 a);
 vec3 DirectLight(const Intersection& i);
 void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]);
@@ -76,7 +79,7 @@ void raycasting();
 
 
 int main() {
-	LoadTestModelO(objects);
+	LoadTestModel(objects);
 	screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT );
 
 	while( NoQuitMessageSDL() )
@@ -158,27 +161,27 @@ void Update()
 	//Move light position depending on key press
 	if(keystate[SDLK_w])
 	{
-		lightPos.z += lightDelta;
+		lightCentre.z += lightDelta;
 	}
 	if(keystate[SDLK_s])
 	{
-		lightPos.z -= lightDelta;
+		lightCentre.z -= lightDelta;
 	}
 	if(keystate[SDLK_a])
 	{
-		lightPos.x -= lightDelta;
+		lightCentre.x -= lightDelta;
 	}
 	if(keystate[SDLK_d])
 	{
-		lightPos.x += lightDelta;
+		lightCentre.x += lightDelta;
 	}
 	if(keystate[SDLK_q])
 	{
-		lightPos.y -= lightDelta;
+		lightCentre.y -= lightDelta;
 	}
 	if(keystate[SDLK_e])
 	{
-		lightPos.y += lightDelta;
+		lightCentre.y += lightDelta;
 	}
 }
 
@@ -412,48 +415,39 @@ float distanceBetweenPoints(vec3 a, vec3 b) {
 	return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2) + pow(a.z - b.z, 2));
 }
 
-//Caluclate the dot product between the two given vectors
-float dotProduct(vec3 a, vec3 b) {
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
 //Calculate the normalised direction vector from the given vector to the lightsource
 vec3 unitVectorToLightSource(vec3 a) {
-	vec3 v(lightPos.x - a.x, lightPos.y - a.y, lightPos.z - a.z);
+	vec3 v(lightCentre.x - a.x, lightCentre.y - a.y, lightCentre.z - a.z);
 	return normalize(v);
 }
 
 //Output the illumination of the point in the intersection
 vec3 DirectLight(const Intersection& i) {
-	//Pi constant
-	const float pi = 3.1415926535897;
 
 	//distance from intersection point to light source
-	float radius = distanceBetweenPoints(i.position, lightPos);
-
-	//The power per area at this point
-	vec3 B = lightColor / (4 * pi * pow(radius,3));
-
-	//unit vector describing normal of surface
-	vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
+	float radius = distanceBetweenPoints(i.position, lightCentre);
 
 	//unit vector describing direction from surface point to light source
 	vec3 r = unitVectorToLightSource(i.position);
 
-	//Make sure that the normal points the correct way (i.e. <90 degrees away from the light source)
-	if(dotProduct(n,r) < 0) {
-		n = -n;
-	}
-
-	//fraction of the power per area depending on surface's angle from light source
-	vec3 D = B * max(dotProduct(r,n),0.0f);
+	vec3 D;
 
 	//trace ray from intersection point to lightsource, if intersection distance is less than distance to light
 	//source then give give this point no direct illumination. This creates shadow effect
 	if(PointInShadow(i.position, r, objects, radius)) {
 		D = vec3(0,0,0);
 	}
+	else {
 
+		//The power per area at this point
+		vec3 B = lightColor / (4 * PI * pow(radius,3));
+
+		//unit vector describing normal of surface
+		vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
+
+		//fraction of the power per area depending on surface's angle from light source
+		D = B * max(dot(r,n),0.0f);
+	}
 	return D;
 }
 
