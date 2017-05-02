@@ -64,6 +64,7 @@ void Draw();
 void Update();
 bool ObjectIntersection(vec3 start, vec3 dir, const Object& object);
 bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, Intersection& closestIntersection);
+bool PointInShadow(vec3 start, vec3 dir, const vector<Object>& objects, float radius);
 vec3 DirectLight(const Intersection& i);
 void updateRotationMatrix();
 float distanceBetweenPoints(vec3 a, vec3 b);
@@ -326,6 +327,80 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, In
 	return intersection;
 }
 
+bool PointInShadow(vec3 start, vec3 dir, const vector<Object>& objects, float radius) {
+
+	//Increment the variable holding the total number of primary rays
+	numPrimaryRays++;
+
+	//make sure that the direction vector is normalized
+	dir = normalize(dir);
+
+	for(unsigned int j = 0; j < objects.size(); j++) {
+	
+	
+		if(ObjectIntersection(start, dir, objects[j])) {
+
+			//iterates through all triangles
+			for(unsigned int i = 0; i < objects[j].triangles.size(); i++) {
+				//increment the variable counting the number of triangle ray intersection tests
+				numRayTrianglesTests++;
+	
+				//triangles vertices
+				vec3 v0 = objects[j].triangles[i].v0;
+				vec3 v1 = objects[j].triangles[i].v1;
+				vec3 v2 = objects[j].triangles[i].v2;
+		
+				//basis vectors
+				vec3 e1 = v1 - v0;
+				vec3 e2 = v2 - v0;	
+	
+				//b vector
+				vec3 b = start - v0;
+	
+				//A matrix
+				mat3 A(-dir, e1, e2);
+				float detA = glm::determinant(A);
+	
+				//Cramer's rule to calculate t
+				mat3 At(b, e1, e2);
+				float t = glm::determinant(At) / detA;
+		
+				//if the distance is greater than 0, i.e. the triangle is infront of the camera then continue
+				if(t > epsilon) {
+	
+					//Use Cramer's rule to calculate u
+					mat3 Au(-dir, b, e2);
+					float u = glm::determinant(Au) / detA;
+	
+					//Only continue if u meets the inequality conditions
+					if( u > -epsilon && u <= 1 + epsilon) {
+	
+						//Use Cramer's rule to calculate v
+						mat3 Av(-dir, e1, b);
+						float v = glm::determinant(Av) / detA;
+	
+						//If ray intersects triangle
+						if(v > -epsilon && u + v <= 1 + epsilon) {
+
+							//Increment the variable containing the total number of triangle ray intersections
+							numRayTrianglesIntersections++;
+	
+							//if this triangle is closer than the current closest intersection
+							if(t < radius + epsilon) {
+								//set intersection flag to true
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//return flag indicating whether ray intersects with any triangles
+	return false;
+}
+
 void updateRotationMatrix() {
 	//Calcuate new columns for the camera's rotation matrix
 	cameraRot[0] = vec3(cos(yaw), 0, -sin(yaw));
@@ -373,14 +448,10 @@ vec3 DirectLight(const Intersection& i) {
 	//fraction of the power per area depending on surface's angle from light source
 	vec3 D = B * max(dotProduct(r,n),0.0f);
 
-	//trace ray from intersection point to lightsource, if closest intersection distance is less than distance to light
+	//trace ray from intersection point to lightsource, if intersection distance is less than distance to light
 	//source then give give this point no direct illumination. This creates shadow effect
-	Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
-	if(ClosestIntersection(i.position, r, objects, closest)) {
-		//If the closest intersection is closer than the light source then set the illumination to 0
-		if(closest.distance < radius + epsilon) {
-			D = vec3(0,0,0);
-		}
+	if(PointInShadow(i.position, r, objects, radius)) {
+		D = vec3(0,0,0);
 	}
 
 	return D;
