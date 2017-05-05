@@ -33,7 +33,7 @@ vector<Object> objects;
 
 //Camera information
 float focalLength = 500;
-vec3 cameraPos(0,0,-4);
+vec3 cameraPos(0,0,-3.001);
 mat3 cameraRot(vec3(1,0,0),vec3(0,1,0),vec3(0,0,1));
 float yaw = 0;
 

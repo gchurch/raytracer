@@ -46,7 +46,7 @@ float yaw = 0;
 vec3 lightCentre(0, -0.5, -0.7);
 float lightRadius = 0.05;
 vec3 lightColor = 10.f * vec3(1,1,1);
-vec3 indirectLight = 0.1f * vec3(1,1,1);
+vec3 indirectLight = 0.15f * vec3(1,1,1);
 
 //Update information
 float posDelta = 0.1;

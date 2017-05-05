@@ -1,3 +1,6 @@
+make
+./build/raytracer
+
 make antialiasing
 ./build/raytracer_antialiasing
 
