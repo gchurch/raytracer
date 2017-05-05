@@ -22,16 +22,17 @@ struct Intersection
 /* GLOBAL VARIABLES                                                            */
 
 //Screen information
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+const int SCREEN_WIDTH = 500;
+const int SCREEN_HEIGHT = 500;
 SDL_Surface* screen;
 int t;
+
 
 //Scene information
 vector<Object> objects;
 
 //Camera information
-float focalLength = 600;
+float focalLength = 500;
 vec3 cameraPos(0,0,-4);
 mat3 cameraRot(vec3(1,0,0),vec3(0,1,0),vec3(0,0,1));
 float yaw = 0;
