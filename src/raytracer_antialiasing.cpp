@@ -45,6 +45,8 @@ float posDelta = 0.1;
 float rotDelta = 0.1;
 float lightDelta = 0.1;
 
+int antiAliasingCells = 9;
+
 //Floating point inaccuracy constant
 float epsilon = 0.00001;
 
@@ -252,14 +254,29 @@ void Update()
 	}
 }
 
-void Draw() {
-	SDL_FillRect(screen, 0, 0);
+//Stochastic sampling for antialiasing (could implement distance based weights)
+void getArrayOfDirectionVectors(float x, float y, int n, vec3 dir[]) {
 
-	if(SDL_MUSTLOCK(screen)) {
-		SDL_LockSurface(screen);
+	int rowLength = sqrt(n);
+
+	float cellLength = 1/(float) rowLength;
+	int k = 0;
+
+	for(int i = 0; i < rowLength; i++) {
+		for(int j = 0; j < rowLength; j++) {
+
+			//For now not using any randomness
+			float newX = (x - ((i-1) * cellLength));
+			float newY = (y - ((j-1) * cellLength));
+
+			dir[k] = normalize(vec3(newX, newY, focalLength));
+			dir[k] = cameraRot * dir[k];
+			k++;
+		}
 	}
+}
 
-
+void raytracing() {
 	//Iterate through all pixels in window
 	for(int y = 0; y < SCREEN_HEIGHT; y++) {
 		for(int x = 0; x < SCREEN_WIDTH; x++) {
@@ -267,32 +284,47 @@ void Draw() {
 			//Calculate relative x and y positions of the pixel to the camera position
 			float newX = (float) x - (float) SCREEN_WIDTH / 2;
 			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
-
-			//the normalised ray vector (assuming no rotation of the camera)
-			vec3 d = normalize(vec3(newX, newY, focalLength));
-
-			//The new ray vector is the rotation matrix multiplied by the old ray vector
-			d = cameraRot * d;
 			
-			//holds information about the closest intersection for this ray
-			Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
-	
+			//array of direction vectors used for antialiasing
+			vec3 d[antiAliasingCells];
+			getArrayOfDirectionVectors(newX, newY, antiAliasingCells, d);
+
+			vec3 R(0,0,0);
+
+			float factor = 1.0f/(float) antiAliasingCells;
+			
 			//If the ray intersects a triangle then fill the pixel
 			//with the color of the closest intersecting triangle
-			if(ClosestIntersection(cameraPos, d, triangles, closest) == true) {
-				//row
-				vec3 color = triangles[closest.triangleIndex].color;
-				//D
-				vec3 light = DirectLight(closest);
+			for(int i = 0; i < antiAliasingCells; i++) {
 
-				//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
-				//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
-				vec3 R = color * (light + indirectLight);
-				PutPixelSDL(screen, x, y, R);
+				//holds information about the closest intersection for this ray
+				Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
+
+				if(ClosestIntersection(cameraPos, d[i], triangles, closest) == true) {
+					//row
+					vec3 color = triangles[closest.triangleIndex].color;
+					//D
+					vec3 light = DirectLight(closest);
+		
+					//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
+					//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
+					R += color * (light + indirectLight) * factor;
+				}
 			}
+			PutPixelSDL(screen, x, y, R);
 
 		}
 	}
+}
+
+void Draw() {
+	SDL_FillRect(screen, 0, 0);
+
+	if(SDL_MUSTLOCK(screen)) {
+		SDL_LockSurface(screen);
+	}
+
+	raytracing();
 
 	if(SDL_MUSTLOCK(screen)) {
 		SDL_UnlockSurface(screen);

@@ -1,4 +1,5 @@
-FILE=raytracer
+DEFAULT=raytracer
+AA=antialiasing
 
 ########
 #   Directories
@@ -7,7 +8,8 @@ B_DIR=build
 
 ########
 #   Output
-EXEC=$(B_DIR)/$(FILE)
+EXEC1=$(B_DIR)/$(DEFAULT)
+EXEC2=$(B_DIR)/$(DEFAULT)_$(AA)
 
 # default build settings
 CC_OPTS= -pg -Ofast -c -pipe -Wall -Wno-switch -ggdb -g3 
@@ -28,20 +30,26 @@ all:Build
 ########
 #   Object list
 #
-OBJ = $(B_DIR)/$(FILE).o
+OBJ1 = $(B_DIR)/$(DEFAULT).o
+OBJ2 = $(B_DIR)/$(DEFAULT)_$(AA).o
 
 
 ########
 #   Objects
-$(B_DIR)/$(FILE).o : $(S_DIR)/$(FILE).cpp $(S_DIR)/SDLauxiliary.h $(S_DIR)/TestModel.h
-	$(CC) $(CC_OPTS) -o $(B_DIR)/$(FILE).o $(S_DIR)/$(FILE).cpp $(SDL_CFLAGS) $(GLM_CFLAGS)
+$(B_DIR)/$(DEFAULT).o : $(S_DIR)/$(DEFAULT).cpp $(S_DIR)/SDLauxiliary.h $(S_DIR)/TestModel.h
+	$(CC) $(CC_OPTS) -o $(B_DIR)/$(DEFAULT).o $(S_DIR)/$(DEFAULT).cpp $(SDL_CFLAGS) $(GLM_CFLAGS)
+
+$(B_DIR)/$(DEFAULT)_$(AA).o : $(S_DIR)/$(DEFAULT)_$(AA).cpp $(S_DIR)/SDLauxiliary.h $(S_DIR)/TestModel.h
+	$(CC) $(CC_OPTS) -o $(B_DIR)/$(DEFAULT)_$(AA).o $(S_DIR)/$(DEFAULT)_$(AA).cpp $(SDL_CFLAGS) $(GLM_CFLAGS)
 
 
 ########
 #   Main build rule     
-Build : $(OBJ) Makefile
-	$(CC) $(LN_OPTS) -o $(EXEC) $(OBJ) $(SDL_LDFLAGS)
+Build : $(OBJ1) Makefile
+	$(CC) $(LN_OPTS) -o $(EXEC1) $(OBJ1) $(SDL_LDFLAGS)
 
+antialiasing: $(OBJ2) Makefile
+	$(CC) $(LN_OPTS) -o $(EXEC2) $(OBJ2) $(SDL_LDFLAGS)
 
 clean:
 	rm -f $(B_DIR)/* 
