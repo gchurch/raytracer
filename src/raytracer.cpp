@@ -165,7 +165,7 @@ vec3 DirectLight(const Intersection& i) {
 	float radius = distanceBetweenPoints(i.position, lightPos);
 
 	//The power per area at this point
-	vec3 B = lightColor / (4 * pi * pow(radius,3));
+	vec3 B = lightColor / ((float) 4 * pi * (float) pow(radius,3));
 
 	//unit vector describing normal of surface
 	vec3 n = triangles[i.triangleIndex].normal;

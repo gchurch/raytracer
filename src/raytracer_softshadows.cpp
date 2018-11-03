@@ -438,7 +438,7 @@ vec3 DirectLight(const Intersection& i) {
 			//source then give give this point no direct illumination. This creates shadow effect
 			if(!PointInShadow(i.position, r, objects, radius)) {
 				//The power per area at this point
-				vec3 B = lightColor / (4 * PI * pow(radius,3));
+				vec3 B = lightColor / (4 * PI * (float) pow(radius,3));
 
 				//unit vector describing normal of surface
 				vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
@@ -460,7 +460,7 @@ vec3 DirectLight(const Intersection& i) {
 		//source then give give this point no direct illumination. This creates shadow effect
 		if(!PointInShadow(i.position, r, objects, radius)) {
 			//The power per area at this point
-			vec3 B = lightColor / (4 * PI * pow(radius,3));
+			vec3 B = lightColor / (4 * PI * (float) pow(radius,3));
 				
 			//unit vector describing normal of surface
 			vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;				

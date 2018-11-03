@@ -327,7 +327,7 @@ vec3 DirectLight(const Intersection& i) {
 	float radius = distanceBetweenPoints(i.position, lightPos);
 
 	//The power per area at this point
-	vec3 B = lightColor / (4 * pi * pow(radius,3));
+	vec3 B = lightColor / (4 * pi * (float) pow(radius,3));
 
 	//unit vector describing normal of surface
 	vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
@@ -359,7 +359,7 @@ void Update()
 	float dt = float(t2-t);
 	t = t2;
 	printf("Render time:                                   %f ms.\n", dt);
-	printf("Total number of triangles:                     %d\n", objects[0].triangles.size() + objects[1].triangles.size() + objects[2].triangles.size());
+	printf("Total number of triangles:                     %d\n", (int) (objects[0].triangles.size() + objects[1].triangles.size() + objects[2].triangles.size()));
 	printf("Total number of primary rays:                  %d\n", numPrimaryRays);
 	printf("Total number of bounding box tests:            %d\n", numRayBoxTests);
 	printf("Total number of ray-triangles tests:           %d\n", numRayTrianglesTests);
