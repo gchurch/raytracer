@@ -1,4 +1,4 @@
-#Raytracer
+# Raytracer
 
 make
 ./build/raytracer
