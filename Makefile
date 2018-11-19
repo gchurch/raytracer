@@ -63,11 +63,17 @@ Build : $(OBJ1) Makefile
 antialiasing: $(OBJ2) Makefile
 	$(CC) $(LN_OPTS) -o $(EXEC2) $(OBJ2) $(SDL_LDFLAGS)
 
-boundingboxes: $(OBJ3) Makefile
-	$(CC) $(LN_OPTS) -o $(EXEC3) $(OBJ3) $(SDL_LDFLAGS)
-
 softshadows: $(OBJ4) Makefile
 	$(CC) $(LN_OPTS) -o $(EXEC4) $(OBJ4) $(SDL_LDFLAGS)
+
+run: ./$(B_DIR)/raytracer Makefile
+	./$(B_DIR)/raytracer
+
+runaa: ./$(B_DIR)/raytracer_antialiasing Makefile
+	./$(B_DIR)/raytracer_antialiasing
+
+runcc: ./$(B_DIR)/raytracer_softshadows Makefile
+	./$(B_DIR)/raytracer_softshadows
 
 clean:
 	rm -f $(B_DIR)/* 

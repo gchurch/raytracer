@@ -2,7 +2,7 @@
 #include <glm/glm.hpp>
 #include <SDL.h>
 #include "SDLauxiliary.h"
-#include "TestModel.h"
+#include "TestModel_boundingboxes.h"
 #include "limits.h"
 
 using namespace std;
@@ -14,6 +14,7 @@ struct Intersection
 {
 	vec3 position;
 	float distance;
+	int objectIndex;
 	int triangleIndex;
 };
 
@@ -26,9 +27,8 @@ const int SCREEN_HEIGHT = 500;
 SDL_Surface* screen;
 int t;
 
-
 //Scene information
-vector<Triangle> triangles;
+vector<Object> objects;
 
 //Camera information
 float focalLength = 500;
@@ -46,19 +46,28 @@ float posDelta = 0.1;
 float rotDelta = 0.1;
 float lightDelta = 0.1;
 
+//The number of samples taken in antialiasing
+int antiAliasingCells = 4;
+
 //Floating point inaccuracy constant
 float epsilon = 0.00001;
 
+//Statistics
+int numRayBoxTests = 0;
+int numRayTrianglesTests = 0;
+int numRayTrianglesIntersections = 0;
+int numPrimaryRays = 0;
+
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
-bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection);
+bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, Intersection& closestIntersection);
 void Update();
 void Draw();
 vec3 DirectLight(const Intersection& i);
 
 
 int main() {
-	LoadTestModel(triangles);
+	LoadTestModelO(objects);
 	screen = InitializeSDL( SCREEN_WIDTH, SCREEN_HEIGHT );
 
 	while( NoQuitMessageSDL() )
@@ -67,63 +76,143 @@ int main() {
 		Update();
 	}
 
-	SDL_SaveBMP( screen, "screenshot.bmp" );
+	SDL_SaveBMP( screen, "screenshot.bmp" );	
+
 	return 0;
 }
 
-bool ClosestIntersection(vec3 start, vec3 dir, const vector<Triangle>& triangles, Intersection& closestIntersection) {
+//check whether a ray intercepts with an object
+bool ObjectIntersection(vec3 start, vec3 dir, const Object& object) {
+	//Bounding box
+	vec3 Pmin = object.Pmin;
+	vec3 Pmax = object.Pmax;
+	
+	float txmin = (Pmin.x - start.x) / dir.x;
+	float txmax = (Pmax.x - start.x) / dir.x;
+
+	if(txmin > txmax) {
+		float tmp = txmin;
+		txmin = txmax;
+		txmax = tmp;
+	}
+
+	float tymin = (Pmin.y - start.y) / dir.y;
+	float tymax = (Pmax.y - start.y) / dir.y;
+
+	if(tymin > tymax) {
+		float tmp = tymin;
+		tymin = tymax;
+		tymax = tmp;
+	}
+
+	if((txmin > tymax) || (tymin > txmax)) {
+		return false;
+	}
+
+	if(tymin > txmin) {
+		txmin = tymin;
+	}
+
+	if(tymax < txmax) {
+		txmax = tymax;
+	}
+
+	float tzmin = (Pmin.z - start.z) / dir.z;
+	float tzmax = (Pmax.z - start.z) / dir.z;
+
+	if(tzmin > tzmax) {
+		float tmp = tzmin;
+		tzmin = tzmax;
+		tzmax = tmp;
+	}
+
+	if((txmin > tzmax) || (tzmin > txmax)) {
+		return false;
+	}
+
+	if(tzmin > txmin) {
+		txmin = tzmin;
+	}
+
+	if(tzmax < txmax) {
+		txmax = tzmax;
+	}
+	
+	return true;
+}
+
+bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, Intersection& closestIntersection) {
+
+	//Increment the variable holding the total number of primary rays
+	numPrimaryRays++;
+
 	//bool stating whether or not this ray intersects a triangle
 	bool intersection = false;
 
 	//make sure that the direction vector is normalized
 	dir = normalize(dir);
 
-	//iterates through all triangles
-	for(unsigned int i = 0; i < triangles.size(); i++) {
-		//triangles vertices
-		vec3 v0 = triangles[i].v0;
-		vec3 v1 = triangles[i].v1;
-		vec3 v2 = triangles[i].v2;
-		
-		//basis vectors
-		vec3 e1 = v1 - v0;
-		vec3 e2 = v2 - v0;
-
-		//b vector
-		vec3 b = start - v0;
-
-		//A matrix
-		mat3 A(-dir, e1, e2);
-		float detA = glm::determinant(A);
-
-		//Cramer's rule to calculate t
-		mat3 At(b, e1, e2);
-		float t = glm::determinant(At) / detA;
+	for(unsigned int j = 0; j < objects.size(); j++) {
 	
-		//if the distance is greater than 0, i.e. the triangle is infront of the camera then continue
-		if(t > epsilon) {
+	
+		if(ObjectIntersection(start, dir, objects[j])) {
 
-			//Use Cramer's rule to calculate u
-			mat3 Au(-dir, b, e2);
-			float u = glm::determinant(Au) / detA;
+			//iterates through all triangles
+			for(unsigned int i = 0; i < objects[j].triangles.size(); i++) {
+				//increment the variable counting the number of triangle ray intersection tests
+				numRayTrianglesTests++;
+	
+				//triangles vertices
+				vec3 v0 = objects[j].triangles[i].v0;
+				vec3 v1 = objects[j].triangles[i].v1;
+				vec3 v2 = objects[j].triangles[i].v2;
+		
+				//basis vectors
+				vec3 e1 = v1 - v0;
+				vec3 e2 = v2 - v0;	
+	
+				//b vector
+				vec3 b = start - v0;
+	
+				//A matrix
+				mat3 A(-dir, e1, e2);
+				float detA = glm::determinant(A);
+	
+				//Cramer's rule to calculate t
+				mat3 At(b, e1, e2);
+				float t = glm::determinant(At) / detA;
+		
+				//if the distance is greater than 0, i.e. the triangle is infront of the camera then continue
+				if(t > epsilon) {
+	
+					//Use Cramer's rule to calculate u
+					mat3 Au(-dir, b, e2);
+					float u = glm::determinant(Au) / detA;
+	
+					//Only continue if u meets the inequality conditions
+					if( u > -epsilon && u <= 1 + epsilon) {
+	
+						//Use Cramer's rule to calculate v
+						mat3 Av(-dir, e1, b);
+						float v = glm::determinant(Av) / detA;
+	
+						//If ray intersects triangle
+						if(v > -epsilon && u + v <= 1 + epsilon) {
 
-			//Only continue if u meets the inequality conditions
-			if( u > -epsilon && u <= 1 + epsilon) {
-
-				//Use Cramer's rule to calculate v
-				mat3 Av(-dir, e1, b);
-				float v = glm::determinant(Av) / detA;
-
-				//If ray intersects triangle
-				if(v > -epsilon && u + v <= 1 + epsilon) {
-					//if this triangle is closer than the current closest intersection
-					if(t < closestIntersection.distance) {
-						//set intersection flag to true
-						intersection = true;
-						//update closestIntersection flag
-						closestIntersection.position = v0 + u * e1 + v * e2;
-						closestIntersection.distance = t;
-						closestIntersection.triangleIndex = i;
+							//Increment the variable containing the total number of triangle ray intersections
+							numRayTrianglesIntersections++;
+	
+							//if this triangle is closer than the current closest intersection
+							if(t < closestIntersection.distance) {
+								//set intersection flag to true
+								intersection = true;
+								//update closestIntersection flag
+								closestIntersection.position = v0 + u * e1 + v * e2;
+								closestIntersection.distance = t;
+								closestIntersection.objectIndex = j;
+								closestIntersection.triangleIndex = i;
+							}
+						}
 					}
 				}
 			}
@@ -165,10 +254,10 @@ vec3 DirectLight(const Intersection& i) {
 	float radius = distanceBetweenPoints(i.position, lightPos);
 
 	//The power per area at this point
-	vec3 B = lightColor / ((float) 4 * pi * (float) pow(radius,3));
+	vec3 B = lightColor / (4 * pi * (float) pow(radius,3));
 
 	//unit vector describing normal of surface
-	vec3 n = triangles[i.triangleIndex].normal;
+	vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
 
 	//unit vector describing direction from surface point to light source
 	vec3 r = unitVectorToLightSource(i.position);
@@ -179,13 +268,12 @@ vec3 DirectLight(const Intersection& i) {
 	//trace ray from intersection point to lightsource, if closest intersection distance is less than distance to light
 	//source then give give this point no direct illumination. This creates shadow effect
 	Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
-	if(ClosestIntersection(i.position, r, triangles, closest)) {
+	if(ClosestIntersection(i.position, r, objects, closest)) {
 		//If the closest intersection is closer than the light source then set the illumination to 0
 		if(closest.distance < radius + epsilon) {
 			D = vec3(0,0,0);
 		}
 	}
-
 	return D;
 }
 
@@ -196,7 +284,21 @@ void Update()
 	int t2 = SDL_GetTicks();
 	float dt = float(t2-t);
 	t = t2;
-	cout << "Render time: " << dt << " ms." << endl;
+	printf("Render time: %.0f ms.\n", dt);
+	/*
+	printf("Total number of triangles:                     %d\n", (int) (objects[0].triangles.size() + objects[1].triangles.size() + objects[2].triangles.size()));
+	printf("Total number of primary rays:                  %d\n", numPrimaryRays);
+	printf("Total number of bounding box tests:            %d\n", numRayBoxTests);
+	printf("Total number of ray-triangles tests:           %d\n", numRayTrianglesTests);
+	printf("Total number of ray-triangles intersections:   %d\n", numRayTrianglesIntersections);
+	printf("\n");
+	*/
+
+	numPrimaryRays = 0;
+	numRayBoxTests = 0;
+	numRayTrianglesTests = 0;
+	numRayTrianglesIntersections = 0;
+
 
 	//get key presses and update camera position
 	Uint8* keystate = SDL_GetKeyState(0);
@@ -253,14 +355,7 @@ void Update()
 	}
 }
 
-void Draw() {
-	SDL_FillRect(screen, 0, 0);
-
-	if(SDL_MUSTLOCK(screen)) {
-		SDL_LockSurface(screen);
-	}
-
-
+void raytracing() {
 	//Iterate through all pixels in window
 	for(int y = 0; y < SCREEN_HEIGHT; y++) {
 		for(int x = 0; x < SCREEN_WIDTH; x++) {
@@ -268,7 +363,7 @@ void Draw() {
 			//Calculate relative x and y positions of the pixel to the camera position
 			float newX = (float) x - (float) SCREEN_WIDTH / 2;
 			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
-
+			
 			//the normalised ray vector (assuming no rotation of the camera)
 			vec3 d = normalize(vec3(newX, newY, focalLength));
 
@@ -277,23 +372,31 @@ void Draw() {
 			
 			//holds information about the closest intersection for this ray
 			Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
-	
-			//If the ray intersects a triangle then fill the pixel
-			//with the color of the closest intersecting triangle
-			if(ClosestIntersection(cameraPos, d, triangles, closest) == true) {
+
+
+			if(ClosestIntersection(cameraPos, d, objects, closest) == true) {
 				//row
-				vec3 color = triangles[closest.triangleIndex].color;
+				vec3 color = objects[closest.objectIndex].triangles[closest.triangleIndex].color;
 				//D
 				vec3 light = DirectLight(closest);
-
+				
 				//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
 				//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
 				vec3 R = color * (light + indirectLight);
 				PutPixelSDL(screen, x, y, R);
 			}
-
 		}
 	}
+}
+
+void Draw() {
+	SDL_FillRect(screen, 0, 0);
+
+	if(SDL_MUSTLOCK(screen)) {
+		SDL_LockSurface(screen);
+	}
+
+	raytracing();
 
 	if(SDL_MUSTLOCK(screen)) {
 		SDL_UnlockSurface(screen);
