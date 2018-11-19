@@ -31,26 +31,26 @@ int t;
 vector<Object> objects;
 
 //Camera information
-float focalLength = 500;
+const float focalLength = 500;
 vec3 cameraPos(0,0,-3.001);
 mat3 cameraRot(vec3(1,0,0),vec3(0,1,0),vec3(0,0,1));
 float yaw = 0;
 
 //Light information
 vec3 lightPos(0, -0.5, -0.7);
-vec3 lightColor = 14.f * vec3(1,1,1);
-vec3 indirectLight = 0.5f * vec3(1,1,1);
+const vec3 lightColor = 14.f * vec3(1,1,1);
+const vec3 indirectLight = 0.5f * vec3(1,1,1);
 
 //Update information
-float posDelta = 0.1;
-float rotDelta = 0.1;
-float lightDelta = 0.1;
+const float posDelta = 0.1;
+const float rotDelta = 0.1;
+const float lightDelta = 0.1;
 
 //The number of samples taken in antialiasing
 int antiAliasingCells = 4;
 
 //Floating point inaccuracy constant
-float epsilon = 0.00001;
+const float epsilon = 0.00001;
 
 //Statistics
 int numRayBoxTests = 0;
@@ -59,7 +59,7 @@ int numRayTrianglesIntersections = 0;
 int numPrimaryRays = 0;
 
 //raytracer features
-bool antiAliasing = true;
+const bool antiAliasing = true;
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
