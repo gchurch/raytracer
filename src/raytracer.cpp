@@ -42,7 +42,7 @@ float yaw = 0;
 vec3 lightPos(0, -0.5, -0.7);
 const vec3 lightColor = 14.f * vec3(1,1,1);
 const vec3 indirectLight = 0.5f * vec3(1,1,1);
-const float lightRadius = 0.05;
+const float lightRadius = 0.03;
 
 //Update information
 const float posDelta = 0.1;
@@ -64,7 +64,7 @@ int numPrimaryRays = 0;
 
 //raytracer features
 const bool antiAliasing = false;
-const bool softShadows = true;
+const bool softShadows = false;
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
