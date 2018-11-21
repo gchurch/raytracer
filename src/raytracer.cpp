@@ -21,6 +21,8 @@ struct Intersection
 /* ----------------------------------------------------------------------------*/
 /* GLOBAL VARIABLES                                                            */
 
+const float PI = 3.1415926535897;
+
 //Screen information
 const int SCREEN_WIDTH = 500;
 const int SCREEN_HEIGHT = 500;
@@ -40,6 +42,7 @@ float yaw = 0;
 vec3 lightPos(0, -0.5, -0.7);
 const vec3 lightColor = 14.f * vec3(1,1,1);
 const vec3 indirectLight = 0.5f * vec3(1,1,1);
+const float lightRadius = 0.05;
 
 //Update information
 const float posDelta = 0.1;
@@ -47,7 +50,8 @@ const float rotDelta = 0.1;
 const float lightDelta = 0.1;
 
 //The number of samples taken in antialiasing
-int antiAliasingCells = 4;
+//must be a square number
+int antiAliasingCells = 16;
 
 //Floating point inaccuracy constant
 const float epsilon = 0.00001;
@@ -59,7 +63,8 @@ int numRayTrianglesIntersections = 0;
 int numPrimaryRays = 0;
 
 //raytracer features
-const bool antiAliasing = true;
+const bool antiAliasing = false;
+const bool softShadows = true;
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
@@ -67,7 +72,6 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, In
 void Update();
 void Draw();
 vec3 DirectLight(const Intersection& i);
-
 
 int main() {
 
@@ -231,6 +235,81 @@ bool ClosestIntersection(vec3 start, vec3 dir, const vector<Object>& objects, In
 	return intersection;
 }
 
+bool PointInShadow(vec3 start, vec3 dir, const vector<Object>& objects, float radius) {
+
+	//Increment the variable holding the total number of primary rays
+	numPrimaryRays++;
+
+	//make sure that the direction vector is normalized
+	dir = normalize(dir);
+
+	for(unsigned int j = 0; j < objects.size(); j++) {
+	
+	
+		if(ObjectIntersection(start, dir, objects[j])) {
+
+			//iterates through all triangles
+			for(unsigned int i = 0; i < objects[j].triangles.size(); i++) {
+				//increment the variable counting the number of triangle ray intersection tests
+				numRayTrianglesTests++;
+	
+				//triangles vertices
+				vec3 v0 = objects[j].triangles[i].v0;
+				vec3 v1 = objects[j].triangles[i].v1;
+				vec3 v2 = objects[j].triangles[i].v2;
+		
+				//basis vectors
+				vec3 e1 = v1 - v0;
+				vec3 e2 = v2 - v0;	
+	
+				//b vector
+				vec3 b = start - v0;
+	
+				//A matrix
+				mat3 A(-dir, e1, e2);
+				float detA = glm::determinant(A);
+	
+				//Cramer's rule to calculate t
+				mat3 At(b, e1, e2);
+				float t = glm::determinant(At) / detA;
+		
+				//if the distance is greater than 0, i.e. the triangle is infront of the camera then continue
+				if(t > epsilon) {
+	
+					//Use Cramer's rule to calculate u
+					mat3 Au(-dir, b, e2);
+					float u = glm::determinant(Au) / detA;
+	
+					//Only continue if u meets the inequality conditions
+					if( u > -epsilon && u <= 1 + epsilon) {
+	
+						//Use Cramer's rule to calculate v
+						mat3 Av(-dir, e1, b);
+						float v = glm::determinant(Av) / detA;
+	
+						//If ray intersects triangle
+						if(v > -epsilon && u + v <= 1 + epsilon) {
+
+							//Increment the variable containing the total number of triangle ray intersections
+							numRayTrianglesIntersections++;
+	
+							//if this triangle is closer than the current closest intersection
+							if(t < radius + epsilon) {
+								//set intersection flag to true
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//return flag indicating whether ray intersects with any triangles
+	return false;
+}
+
+
 void updateRotationMatrix() {
 	//Calcuate new columns for the camera's rotation matrix
 	cameraRot[0] = vec3(cos(yaw), 0, -sin(yaw));
@@ -253,35 +332,74 @@ vec3 unitVectorToLightSource(vec3 a) {
 	return normalize(v);
 }
 
+vector<vec3> CalculateLightPoints() {
+	vector<vec3> points;
+	points.push_back(lightPos + vec3(lightRadius,0,0));
+	points.push_back(lightPos + vec3(-lightRadius,0,0));
+	points.push_back(lightPos + vec3(0,lightRadius,0));
+	points.push_back(lightPos + vec3(0,-lightRadius,0));
+	points.push_back(lightPos + vec3(0,0,lightRadius));
+	points.push_back(lightPos + vec3(0,0,-lightRadius));
+	return points;
+}
+
 //Output the illumination of the point in the intersection
 vec3 DirectLight(const Intersection& i) {
-	//Pi constant
-	const float pi = 3.1415926535897;
 
-	//distance from intersection point to light source
-	float radius = distanceBetweenPoints(i.position, lightPos);
+	vec3 D(0,0,0);
 
-	//The power per area at this point
-	vec3 B = lightColor / (4 * pi * (float) pow(radius,3));
+	if(softShadows) {
 
-	//unit vector describing normal of surface
-	vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
+		//the positions of all the light sources
+		vector<vec3> lightPoints = CalculateLightPoints();
+	
+		float fraction = 1.0f / (float) lightPoints.size();
 
-	//unit vector describing direction from surface point to light source
-	vec3 r = unitVectorToLightSource(i.position);
+		for(unsigned int j = 0; j < lightPoints.size(); j++) {
 
-	//fraction of the power per area depending on surface's angle from light source
-	vec3 D = B * max(dotProduct(r,n),0.0f);
+			//distance from intersection point to light source
+			float radius = length(i.position - lightPoints[j]);
 
-	//trace ray from intersection point to lightsource, if closest intersection distance is less than distance to light
-	//source then give give this point no direct illumination. This creates shadow effect
-	Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
-	if(ClosestIntersection(i.position, r, objects, closest)) {
-		//If the closest intersection is closer than the light source then set the illumination to 0
-		if(closest.distance < radius + epsilon) {
-			D = vec3(0,0,0);
+			//r is the unit vector describing direction from surface point to light source
+			vec3 v(lightPoints[j].x - i.position.x, lightPoints[j].y - i.position.y, lightPoints[j].z - i.position.z);
+			vec3 r = normalize(v);
+
+			//trace ray from intersection point to lightsource, if intersection distance is less than distance to light
+			//source then give give this point no direct illumination. This creates shadow effect
+			if(!PointInShadow(i.position, r, objects, radius)) {
+				//The power per area at this point
+				vec3 B = lightColor / (4 * PI * (float) pow(radius,3));
+
+				//unit vector describing normal of surface
+				vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;
+
+				//fraction of the power per area depending on surface's angle from light source
+				D += fraction * B * max(dot(r,n),0.0f);
+			}
 		}
 	}
+	else {
+
+		//distance from intersection point to light source
+		float radius = length(i.position - lightPos);
+
+		//r is the unit vector describing direction from surface point to light source
+		vec3 v(lightPos.x - i.position.x, lightPos.y - i.position.y, lightPos.z - i.position.z);
+		vec3 r = normalize(v);
+
+		//trace ray from intersection point to lightsource, if intersection distance is less than distance to light
+		//source then give give this point no direct illumination. This creates shadow effect
+		if(!PointInShadow(i.position, r, objects, radius)) {
+			//The power per area at this point
+			vec3 B = lightColor / (4 * PI * (float) pow(radius,3));
+				
+			//unit vector describing normal of surface
+			vec3 n = objects[i.objectIndex].triangles[i.triangleIndex].normal;				
+
+			//fraction of the power per area depending on surface's angle from light source
+			D = B * max(dot(r,n),0.0f);
+		}
+	}	
 	return D;
 }
 
@@ -392,30 +510,6 @@ void raytracing() {
 			//Calculate relative x and y positions of the pixel to the camera position
 			float newX = (float) x - (float) SCREEN_WIDTH / 2;
 			float newY = (float) y - (float) SCREEN_HEIGHT / 2;
-			
-			/*
-			//the normalised ray vector (assuming no rotation of the camera)
-			vec3 d = normalize(vec3(newX, newY, focalLength));
-
-			//The new ray vector is the rotation matrix multiplied by the old ray vector
-			d = cameraRot * d;
-			
-			//holds information about the closest intersection for this ray
-			Intersection closest = {vec3(0,0,0), std::numeric_limits<float>::max(), -1};
-
-
-			if(ClosestIntersection(cameraPos, d, objects, closest) == true) {
-				//row
-				vec3 color = objects[closest.objectIndex].triangles[closest.triangleIndex].color;
-				//D
-				vec3 light = DirectLight(closest);
-				
-				//Assuming diffuse surface, the light that gets reflected is the color vector * the light vector plus
-				//the indirect light vector where the * operator denotes element-wise multiplication between vectors.
-				vec3 R = color * (light + indirectLight);
-				PutPixelSDL(screen, x, y, R);
-			}
-			*/
 
 			//array of direction vectors used for antialiasing
 			vec3 d[antiAliasingCells];
