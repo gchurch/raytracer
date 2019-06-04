@@ -4,7 +4,7 @@ This is a raytracer graphics program created as part of the Computer Graphics un
 
 The program is written in C++ and makes use of GLM and SDL.
 
-![Original](https://github.com/gchurch/raytracer/blob/master/screenshots/soft_shadows.bmp)
+![Screenshot](./example_screenshot.bmp "screenshot")
 
 ## Setup
 
