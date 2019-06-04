@@ -6,41 +6,23 @@ The program is written in C++ and makes use of GLM and SDL.
 
 ![Original](https://github.com/gchurch/raytracer/blob/master/screenshots/soft_shadows.bmp)
 
-## Linux Setup
+## Setup
 
-Install SDL
+Install SDL with the command:
 
 ```
 sudo apt-get install libsdl1.2-dev
 ```
 
-Clone the GLM github repository
+Clone the repository with the command:
 
 ```
-$ git clone https://github.com/g-truc/glm
-```
-
-Set the GLMDIR environment variable to your GLM directory's path
-
-e.g.
-
-```
-$ export GLMDIR=/home/user/glm
-```
-
-## Installation
-
-Clone the raytracer github repository
-
-```
-$ git clone https://github.com/gchurch/raytracer
+$ git clone --recurse-submodules https://github.com/gchurch/raytracer
 ```
 
 ## Compilation
 
-Navigate to the raytracer repository
-
-To compile the code, run the command:
+To compile the code, enter the command:
 
 ```
 $ make
@@ -48,7 +30,7 @@ $ make
 
 ## Execution
 
-Make sure you are in the raytracer repository and issue the command:
+To execute the raytracer, enter the command:
 
 ```
 $ make run
