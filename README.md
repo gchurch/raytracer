@@ -4,6 +4,8 @@ This is a raytracer graphics program created as part of the Computer Graphics un
 
 The program is written in C++ and makes use of GLM and SDL.
 
+![Original](https://github.com/gchurch/raytracer/blob/master/screenshots/soft_shadows.bmp)
+
 ## Linux Setup
 
 Make sure you have SDL Installed on your machine
@@ -45,7 +47,7 @@ $ make
 Make sure you are in the raytracer repository and issue the command:
 
 ```
-$ ./build/raytracer
+$ make run
 ```
 
 ## Controls
