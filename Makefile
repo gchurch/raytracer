@@ -15,9 +15,10 @@ LN_OPTS=
 CC=g++
 
 ########
-#       SDL options
+#    SDL options
 SDL_CFLAGS := $(shell sdl-config --cflags)
-GLM_CFLAGS := -I$(GLMDIR)
+#GLM_CFLAGS := -I$(GLMDIR)
+GLM_CFLAGS := -I./glm
 SDL_LDFLAGS := $(shell sdl-config --libs)
 
 ########
