@@ -8,7 +8,11 @@ The program is written in C++ and makes use of GLM and SDL.
 
 ## Linux Setup
 
-Make sure you have SDL Installed on your machine
+Install SDL
+
+```
+sudo apt-get install libsdl1.2-dev
+```
 
 Clone the GLM github repository
 
