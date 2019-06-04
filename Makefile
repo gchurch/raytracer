@@ -1,4 +1,4 @@
-DEFAULT=raytracer
+FILE=raytracer
 
 ########
 #   Directories
@@ -7,10 +7,10 @@ B_DIR=build
 
 ########
 #   Output
-EXEC1=$(B_DIR)/$(DEFAULT)
+EXEC1=$(B_DIR)/$(FILE)
 
 # default build settings
-CC_OPTS= -pg -Ofast -c -pipe -Wall -Wno-switch -ggdb -g3 
+CC_OPTS=-c -pipe -Wall -Wno-switch -ggdb -g3 -Ofast
 LN_OPTS=
 CC=g++
 
@@ -28,12 +28,13 @@ all:Build
 ########
 #   Object list
 #
-OBJ1 = $(B_DIR)/$(DEFAULT).o
+OBJ1 = $(B_DIR)/$(FILE).o
+
 
 ########
 #   Objects
-$(B_DIR)/$(DEFAULT).o : $(S_DIR)/$(DEFAULT).cpp $(S_DIR)/SDLauxiliary.h $(S_DIR)/TestModel.h
-	$(CC) $(CC_OPTS) -o $(B_DIR)/$(DEFAULT).o $(S_DIR)/$(DEFAULT).cpp $(SDL_CFLAGS) $(GLM_CFLAGS)
+$(OBJ1) : $(S_DIR)/$(FILE).cpp $(S_DIR)/SDLauxiliary.h $(S_DIR)/TestModel.h
+	$(CC) $(CC_OPTS) $(S_DIR)/$(FILE).cpp -o $(OBJ1) $(SDL_CFLAGS) $(GLM_CFLAGS)
 
 
 ########
@@ -41,9 +42,8 @@ $(B_DIR)/$(DEFAULT).o : $(S_DIR)/$(DEFAULT).cpp $(S_DIR)/SDLauxiliary.h $(S_DIR)
 Build : $(OBJ1) Makefile
 	$(CC) $(LN_OPTS) -o $(EXEC1) $(OBJ1) $(SDL_LDFLAGS)
 
-run: ./$(B_DIR)/raytracer Makefile
-	./$(B_DIR)/raytracer
-
+run : $(EXEC1)
+	./$(EXEC1)
 
 clean:
 	rm -f $(B_DIR)/* 

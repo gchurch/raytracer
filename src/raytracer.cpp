@@ -51,7 +51,7 @@ const float lightDelta = 0.1;
 
 //The number of samples taken in antialiasing
 //must be a square number
-int antiAliasingCells = 16;
+int antiAliasingCells = 4;
 
 //Floating point inaccuracy constant
 const float epsilon = 0.00001;
@@ -63,8 +63,8 @@ int numRayTrianglesIntersections = 0;
 int numPrimaryRays = 0;
 
 //raytracer features
-const bool antiAliasing = false;
-const bool softShadows = false;
+const bool antiAliasing = true;
+const bool softShadows = true;
 
 /* ----------------------------------------------------------------------------*/
 /* FUNCTIONS                                                                   */
