@@ -11,7 +11,7 @@ The program is written in C++ and makes use of GLM and SDL.
 Install SDL with the command:
 
 ```
-sudo apt-get install libsdl1.2-dev
+$ sudo apt-get install libsdl1.2-dev
 ```
 
 Clone the repository with the command:
