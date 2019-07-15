@@ -4,14 +4,14 @@ This is a raytracer graphics program created as part of the Computer Graphics un
 
 The program is written in C++ and makes use of GLM and SDL.
 
-![Original](https://github.com/gchurch/raytracer/blob/master/screenshots/soft_shadows.bmp)
+![Screenshot](./example_screenshot.bmp "screenshot")
 
 ## Setup
 
 Install SDL with the command:
 
 ```
-sudo apt-get install libsdl1.2-dev
+$ sudo apt-get install libsdl1.2-dev
 ```
 
 Clone the repository with the command:
