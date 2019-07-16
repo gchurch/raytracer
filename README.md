@@ -1,6 +1,6 @@
-# C++ Raytracer
+# C++ Ray Tracer
 
-This is a raytracer graphics program created as part of the Computer Graphics unit at the Unversity of Bristol. The program is written in C++ and makes use of GLM and SDL.
+This is a ray tracer graphics program created as part of the Computer Graphics unit at the Unversity of Bristol. The program is written in C++ and makes use of GLM and SDL.
 
 Features:
 - Antialiasing
@@ -33,7 +33,7 @@ $ make
 
 ## Execution
 
-To execute the raytracer, enter the command:
+To execute the ray tracer, enter the command:
 
 ```
 $ make run
