@@ -1,8 +1,11 @@
 # C++ Raytracer
 
-This is a raytracer graphics program created as part of the Computer Graphics unit at the Unversity of Bristol. 
+This is a raytracer graphics program created as part of the Computer Graphics unit at the Unversity of Bristol. The program is written in C++ and makes use of GLM and SDL.
 
-The program is written in C++ and makes use of GLM and SDL.
+Features:
+- Antialiasing
+- Bounding box optimisation
+- Soft shadows
 
 ![Screenshot](./example_screenshot.bmp "screenshot")
 
