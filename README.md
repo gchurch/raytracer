@@ -1,4 +1,4 @@
-# C++ Ray Tracer
+# C++ Raytracer
 
 This is a ray tracer graphics program created as part of the Computer Graphics unit at the Unversity of Bristol. The program is written in C++ and makes use of GLM and SDL.
 
